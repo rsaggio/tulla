@@ -1,36 +1,113 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Plataforma de Bootcamp - MVP
 
-## Getting Started
+Plataforma completa de bootcamp de programação estilo TripleTen, focada em transição de carreira para trabalho remoto internacional.
 
-First, run the development server:
+## Stack Tecnológica
+
+- **Frontend**: Next.js 16.0.7 (App Router), React 19.2.0, TypeScript, Tailwind CSS, Shadcn/ui
+- **Backend**: Next.js API Routes, NextAuth.js v5
+- **Database**: MongoDB com Mongoose
+- **Infra**: Vercel (deploy), MongoDB Atlas (database), Vercel Blob (files), Resend (email)
+
+## Pré-requisitos
+
+- Node.js 18+ instalado
+- Conta no MongoDB Atlas (gratuita)
+- Conta no Vercel (opcional, para deploy)
+
+## Setup do Projeto
+
+### 1. Instalar Dependências
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Configurar Variáveis de Ambiente
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Copie o arquivo `.env.example` para `.env`:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+cp .env.example .env
+```
 
-## Learn More
+Edite o arquivo `.env` com suas credenciais:
 
-To learn more about Next.js, take a look at the following resources:
+#### MongoDB Atlas
+1. Acesse [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
+2. Crie um cluster gratuito
+3. Em "Database Access", crie um usuário
+4. Em "Network Access", adicione seu IP (ou 0.0.0.0/0 para desenvolvimento)
+5. Clique em "Connect" → "Connect your application"
+6. Copie a connection string e adicione no `.env`:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```env
+MONGODB_URI=mongodb+srv://usuario:senha@cluster.mongodb.net/bootcamp?retryWrites=true&w=majority
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+#### NextAuth
+Gere uma secret key segura:
 
-## Deploy on Vercel
+```bash
+openssl rand -base64 32
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Adicione no `.env`:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```env
+NEXTAUTH_URL=http://localhost:3000
+NEXTAUTH_SECRET=sua-secret-key-gerada
+```
+
+## Primeiro Acesso
+
+### 1. Criar Conta
+1. Acesse `http://localhost:3000`
+2. Clique em "Cadastre-se"
+3. Preencha o formulário
+4. Por padrão, novos usuários são criados com role "aluno"
+
+### 2. Criar Usuário Admin (via MongoDB)
+Para criar um usuário admin, use o MongoDB Compass ou o shell:
+
+```javascript
+// No MongoDB shell ou Compass
+db.users.updateOne(
+  { email: "seu@email.com" },
+  { $set: { role: "admin" } }
+)
+```
+
+## Scripts Disponíveis
+
+```bash
+# Desenvolvimento
+npm run dev
+
+# Build para produção
+npm run build
+
+# Iniciar em produção
+npm start
+
+# Lint
+npm run lint
+```
+
+## Funcionalidades Implementadas (Fase 1)
+
+✅ Estrutura base do projeto
+✅ Autenticação com NextAuth v5
+✅ Sistema de roles (aluno, instrutor, admin)
+✅ Middleware de proteção de rotas
+✅ Layouts base para todos os dashboards
+✅ Modelos de dados completos
+✅ Páginas de login e cadastro
+✅ Navegação por role
+
+## Próximas Fases
+
+**Fase 2**: Dashboard Admin (CRUD de conteúdo)
+**Fase 3**: Dashboard Aluno (visualizar curso + submeter projetos)
+**Fase 4**: Dashboard Instrutor (revisar submissões)
+**Fase 5**: Métricas e notificações por email
