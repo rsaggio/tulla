@@ -25,6 +25,16 @@ interface Lesson {
   content?: string;
 }
 
+interface Project {
+  _id: string;
+  title: string;
+  description: string;
+  estimatedHours: number;
+  requirements: string[];
+  deliverables: string[];
+  githubRequired: boolean;
+}
+
 interface Module {
   _id: string;
   title: string;
@@ -42,10 +52,12 @@ export default function ModuloDetalhesPage({
 }) {
   const { courseId, moduleId } = use(params);
   const [module, setModule] = useState<Module | null>(null);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadModule();
+    loadProjects();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -64,6 +76,18 @@ export default function ModuloDetalhesPage({
       console.error("Erro ao carregar módulo:", error);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadProjects() {
+    try {
+      const res = await fetch(`/api/modules/${moduleId}/projects`);
+      if (res.ok) {
+        const data = await res.json();
+        setProjects(data);
+      }
+    } catch (error) {
+      console.error("Erro ao carregar projetos:", error);
     }
   }
 
@@ -259,9 +283,56 @@ export default function ModuloDetalhesPage({
             </Link>
           </Box>
 
-          <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center", py: 6 }}>
-            Projetos serão exibidos aqui
-          </Typography>
+          {projects.length === 0 ? (
+            <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center", py: 6 }}>
+              Nenhum projeto criado ainda
+            </Typography>
+          ) : (
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              {projects.map((project) => (
+                <Box
+                  key={project._id}
+                  sx={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: 2,
+                    p: 2,
+                    border: "1px solid",
+                    borderColor: "divider",
+                    borderRadius: 1,
+                    "&:hover": {
+                      bgcolor: "action.hover",
+                    },
+                  }}
+                >
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
+                      <Typography variant="body1" fontWeight="medium">
+                        {project.title}
+                      </Typography>
+                      {project.githubRequired && (
+                        <Chip label="GitHub" variant="outlined" size="small" />
+                      )}
+                    </Box>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      {project.description}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {project.estimatedHours}h estimadas • {project.requirements.length} requisitos • {project.deliverables.length} entregáveis
+                    </Typography>
+                  </Box>
+                  <Link
+                    href={`/admin/conteudo/${courseId}/modulos/${moduleId}/projetos/${project._id}/editar`}
+                    passHref
+                  >
+                    <Button variant="text" size="small" startIcon={<EditIcon />}>
+                      Editar
+                    </Button>
+                  </Link>
+                </Box>
+              ))}
+            </Box>
+          )}
         </CardContent>
       </Card>
     </Box>

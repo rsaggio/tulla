@@ -15,6 +15,7 @@ import IconButton from "@mui/material/IconButton";
 import CircularProgress from "@mui/material/CircularProgress";
 import Alert from "@mui/material/Alert";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import MarkdownEditor from "@/components/MarkdownEditor";
 
 interface Lesson {
   _id: string;
@@ -38,6 +39,7 @@ export default function EditarAulaPage({
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [content, setContent] = useState("");
 
   useEffect(() => {
     loadLesson();
@@ -50,6 +52,7 @@ export default function EditarAulaPage({
       if (res.ok) {
         const data = await res.json();
         setLesson(data);
+        setContent(data.content || "");
       } else {
         setError("Aula não encontrada");
       }
@@ -70,7 +73,7 @@ export default function EditarAulaPage({
 
     const lessonData = {
       title: formData.get("title") as string,
-      content: formData.get("content") as string,
+      content: content,
       type: formData.get("type") as string,
       order: parseInt(formData.get("order") as string),
       videoUrl: formData.get("videoUrl") as string || undefined,
@@ -145,7 +148,7 @@ export default function EditarAulaPage({
   }
 
   return (
-    <Box sx={{ maxWidth: 900 }}>
+    <Box>
       <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
         <Link href={`/admin/conteudo/${courseId}/modulos/${moduleId}`} passHref>
           <IconButton>
@@ -231,27 +234,15 @@ export default function EditarAulaPage({
                 </Typography>
               </Box>
 
-              <Box>
-                <TextField
-                  fullWidth
-                  label="Conteúdo (Markdown)"
-                  name="content"
-                  defaultValue={lesson.content}
-                  placeholder="# Título da Seção&#10;&#10;Escreva o conteúdo da aula em Markdown...&#10;&#10;```javascript&#10;const exemplo = 'código';&#10;```"
-                  required
-                  multiline
-                  rows={20}
-                  sx={{
-                    "& textarea": {
-                      fontFamily: "monospace",
-                      fontSize: "0.875rem",
-                    },
-                  }}
-                />
-                <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: "block" }}>
-                  Use Markdown para formatar o conteúdo. Suporta código, listas, links, etc.
-                </Typography>
-              </Box>
+              <MarkdownEditor
+                value={content}
+                onChange={setContent}
+                label="Conteúdo (Markdown)"
+                placeholder="# Título da Seção&#10;&#10;Escreva o conteúdo da aula em Markdown...&#10;&#10;```javascript&#10;const exemplo = 'código';&#10;```"
+                required
+                rows={20}
+                name="content"
+              />
 
               <Box sx={{ display: "flex", gap: 2, pt: 2 }}>
                 <Button

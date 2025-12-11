@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, use } from "react";
+import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Box from "@mui/material/Box";
@@ -12,6 +12,7 @@ import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
 import IconButton from "@mui/material/IconButton";
 import Alert from "@mui/material/Alert";
+import CircularProgress from "@mui/material/CircularProgress";
 import Switch from "@mui/material/Switch";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import Divider from "@mui/material/Divider";
@@ -25,14 +26,27 @@ interface RubricItem {
   description: string;
 }
 
-export default function NovoProjetoPage({
+interface Project {
+  _id: string;
+  title: string;
+  description: string;
+  estimatedHours: number;
+  requirements: string[];
+  deliverables: string[];
+  rubric: RubricItem[];
+  githubRequired: boolean;
+}
+
+export default function EditarProjetoPage({
   params,
 }: {
-  params: Promise<{ courseId: string; moduleId: string }>;
+  params: Promise<{ courseId: string; moduleId: string; projectId: string }>;
 }) {
   const router = useRouter();
-  const { courseId, moduleId } = use(params);
-  const [loading, setLoading] = useState(false);
+  const { courseId, moduleId, projectId } = use(params);
+  const [project, setProject] = useState<Project | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [requirements, setRequirements] = useState<string[]>([""]);
   const [deliverables, setDeliverables] = useState<string[]>([""]);
@@ -40,6 +54,36 @@ export default function NovoProjetoPage({
     { criterion: "", points: 0, description: "" },
   ]);
   const [githubRequired, setGithubRequired] = useState(true);
+
+  useEffect(() => {
+    loadProject();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function loadProject() {
+    try {
+      const res = await fetch(`/api/modules/${moduleId}/projects/${projectId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setProject(data);
+        setRequirements(data.requirements.length > 0 ? data.requirements : [""]);
+        setDeliverables(data.deliverables.length > 0 ? data.deliverables : [""]);
+        setRubric(
+          data.rubric.length > 0
+            ? data.rubric
+            : [{ criterion: "", points: 0, description: "" }]
+        );
+        setGithubRequired(data.githubRequired);
+      } else {
+        setError("Projeto não encontrado");
+      }
+    } catch (error) {
+      console.error("Erro ao carregar projeto:", error);
+      setError("Erro ao carregar projeto");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   function addRequirement() {
     setRequirements([...requirements, ""]);
@@ -77,7 +121,11 @@ export default function NovoProjetoPage({
     setRubric(rubric.filter((_, i) => i !== index));
   }
 
-  function updateRubricItem(index: number, field: keyof RubricItem, value: string | number) {
+  function updateRubricItem(
+    index: number,
+    field: keyof RubricItem,
+    value: string | number
+  ) {
     const updated = [...rubric];
     updated[index] = { ...updated[index], [field]: value };
     setRubric(updated);
@@ -86,7 +134,7 @@ export default function NovoProjetoPage({
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError("");
-    setLoading(true);
+    setSaving(true);
 
     const formData = new FormData(e.currentTarget);
 
@@ -101,27 +149,78 @@ export default function NovoProjetoPage({
     };
 
     try {
-      const res = await fetch(`/api/modules/${moduleId}/projects`, {
-        method: "POST",
+      const res = await fetch(`/api/modules/${moduleId}/projects/${projectId}`, {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(projectData),
       });
 
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({ error: "Erro desconhecido" }));
-        console.error("Erro na resposta:", errorData);
-        throw new Error(errorData.error || "Erro ao criar projeto");
+        throw new Error(errorData.error || "Erro ao atualizar projeto");
       }
 
-      const project = await res.json();
-      console.log("Projeto criado com sucesso:", project);
       router.push(`/admin/conteudo/${courseId}/modulos/${moduleId}`);
     } catch (error) {
-      console.error("Erro ao criar projeto:", error);
-      setError(error instanceof Error ? error.message : "Erro ao criar projeto. Tente novamente.");
+      console.error("Erro ao atualizar projeto:", error);
+      setError(
+        error instanceof Error ? error.message : "Erro ao atualizar projeto. Tente novamente."
+      );
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
+  }
+
+  async function handleDelete() {
+    if (
+      !confirm(
+        "Tem certeza que deseja excluir este projeto? Esta ação não pode ser desfeita."
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/modules/${moduleId}/projects/${projectId}`, {
+        method: "DELETE",
+      });
+
+      if (res.ok) {
+        router.push(`/admin/conteudo/${courseId}/modulos/${moduleId}`);
+      } else {
+        alert("Erro ao excluir projeto");
+      }
+    } catch (error) {
+      console.error("Erro:", error);
+      alert("Erro ao excluir projeto");
+    }
+  }
+
+  if (loading) {
+    return (
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 400 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (!project) {
+    return (
+      <Box sx={{ maxWidth: 900 }}>
+        <Card>
+          <CardContent sx={{ py: 8, textAlign: "center" }}>
+            <Typography variant="body1" color="text.secondary" gutterBottom>
+              {error || "Projeto não encontrado"}
+            </Typography>
+            <Link href={`/admin/conteudo/${courseId}/modulos/${moduleId}`} passHref>
+              <Button variant="outlined" sx={{ mt: 2 }}>
+                Voltar ao Módulo
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </Box>
+    );
   }
 
   return (
@@ -134,10 +233,10 @@ export default function NovoProjetoPage({
         </Link>
         <Box>
           <Typography variant="h3" fontWeight="bold">
-            Novo Projeto
+            Editar Projeto
           </Typography>
           <Typography variant="body1" color="text.secondary" sx={{ mt: 0.5 }}>
-            Crie um novo projeto prático para o módulo
+            Atualize as informações do projeto
           </Typography>
         </Box>
       </Box>
@@ -149,7 +248,7 @@ export default function NovoProjetoPage({
               Informações Básicas
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Defina o título e descrição do projeto
+              Atualize o título e descrição do projeto
             </Typography>
 
             {error && (
@@ -163,6 +262,7 @@ export default function NovoProjetoPage({
                 fullWidth
                 label="Título do Projeto"
                 name="title"
+                defaultValue={project.title}
                 placeholder="Ex: Sistema de Gerenciamento de Tarefas"
                 required
               />
@@ -171,6 +271,7 @@ export default function NovoProjetoPage({
                 fullWidth
                 label="Descrição"
                 name="description"
+                defaultValue={project.description}
                 placeholder="Descreva o projeto e seus objetivos..."
                 required
                 multiline
@@ -182,9 +283,9 @@ export default function NovoProjetoPage({
                 label="Horas Estimadas"
                 name="estimatedHours"
                 type="number"
+                defaultValue={project.estimatedHours}
                 placeholder="Ex: 20"
                 required
-                defaultValue="20"
               />
 
               <FormControlLabel
@@ -231,10 +332,7 @@ export default function NovoProjetoPage({
                     onChange={(e) => updateRequirement(index, e.target.value)}
                   />
                   {requirements.length > 1 && (
-                    <IconButton
-                      color="error"
-                      onClick={() => removeRequirement(index)}
-                    >
+                    <IconButton color="error" onClick={() => removeRequirement(index)}>
                       <DeleteIcon />
                     </IconButton>
                   )}
@@ -275,10 +373,7 @@ export default function NovoProjetoPage({
                     onChange={(e) => updateDeliverable(index, e.target.value)}
                   />
                   {deliverables.length > 1 && (
-                    <IconButton
-                      color="error"
-                      onClick={() => removeDeliverable(index)}
-                    >
+                    <IconButton color="error" onClick={() => removeDeliverable(index)}>
                       <DeleteIcon />
                     </IconButton>
                   )}
@@ -333,7 +428,11 @@ export default function NovoProjetoPage({
                         placeholder="0"
                         value={item.points || ""}
                         onChange={(e) =>
-                          updateRubricItem(index, "points", parseInt(e.target.value) || 0)
+                          updateRubricItem(
+                            index,
+                            "points",
+                            parseInt(e.target.value) || 0
+                          )
                         }
                       />
                     </Grid>
@@ -349,10 +448,7 @@ export default function NovoProjetoPage({
                           }
                         />
                         {rubric.length > 1 && (
-                          <IconButton
-                            color="error"
-                            onClick={() => removeRubricItem(index)}
-                          >
+                          <IconButton color="error" onClick={() => removeRubricItem(index)}>
                             <DeleteIcon />
                           </IconButton>
                         )}
@@ -365,20 +461,40 @@ export default function NovoProjetoPage({
           </CardContent>
         </Card>
 
-        <Box sx={{ display: "flex", gap: 2 }}>
-          <Button
-            type="submit"
-            variant="contained"
-            disabled={loading}
-            sx={{ flex: 1 }}
-          >
-            {loading ? "Criando..." : "Criar Projeto"}
+        <Box sx={{ display: "flex", gap: 2, mb: 3 }}>
+          <Button type="submit" variant="contained" disabled={saving} sx={{ flex: 1 }}>
+            {saving ? "Salvando..." : "Salvar Alterações"}
           </Button>
           <Link href={`/admin/conteudo/${courseId}/modulos/${moduleId}`} passHref>
             <Button variant="outlined">Cancelar</Button>
           </Link>
         </Box>
       </Box>
+
+      <Card sx={{ borderColor: "error.main", borderWidth: 1 }}>
+        <CardContent>
+          <Typography variant="h6" fontWeight="bold" color="error" gutterBottom>
+            Zona de Perigo
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            Ações irreversíveis que afetam este projeto
+          </Typography>
+
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Box>
+              <Typography variant="body1" fontWeight="medium">
+                Excluir Projeto
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Remove o projeto permanentemente
+              </Typography>
+            </Box>
+            <Button variant="contained" color="error" onClick={handleDelete}>
+              Excluir Projeto
+            </Button>
+          </Box>
+        </CardContent>
+      </Card>
     </Box>
   );
 }
