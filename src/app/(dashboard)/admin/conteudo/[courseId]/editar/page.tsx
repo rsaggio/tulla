@@ -3,12 +3,17 @@
 import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft } from "lucide-react";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Button from "@mui/material/Button";
+import TextField from "@mui/material/TextField";
+import MenuItem from "@mui/material/MenuItem";
+import IconButton from "@mui/material/IconButton";
+import CircularProgress from "@mui/material/CircularProgress";
+import Alert from "@mui/material/Alert";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 
 interface Course {
   _id: string;
@@ -29,7 +34,8 @@ export default function EditarCursoPage({ params }: { params: Promise<{ courseId
 
   useEffect(() => {
     loadCourse();
-  }, [id]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function loadCourse() {
     try {
@@ -87,143 +93,146 @@ export default function EditarCursoPage({ params }: { params: Promise<{ courseId
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <p className="text-muted-foreground">Carregando curso...</p>
-      </div>
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 400 }}>
+        <CircularProgress />
+      </Box>
     );
   }
 
   if (!course) {
     return (
-      <div className="max-w-3xl space-y-6">
+      <Box sx={{ maxWidth: 800 }}>
         <Card>
-          <CardContent className="py-12 text-center">
-            <p className="text-muted-foreground">{error || "Curso não encontrado"}</p>
-            <Link href="/admin/conteudo">
-              <Button variant="outline" className="mt-4">
+          <CardContent sx={{ py: 8, textAlign: "center" }}>
+            <Typography variant="body1" color="text.secondary" gutterBottom>
+              {error || "Curso não encontrado"}
+            </Typography>
+            <Link href="/admin/conteudo" passHref>
+              <Button variant="outlined" sx={{ mt: 2 }}>
                 Voltar para Cursos
               </Button>
             </Link>
           </CardContent>
         </Card>
-      </div>
+      </Box>
     );
   }
 
   return (
-    <div className="max-w-3xl space-y-6">
-      <div className="flex items-center gap-4">
-        <Link href={`/admin/conteudo/${courseId}`}>
-          <Button variant="ghost" size="icon">
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
+    <Box sx={{ maxWidth: 800 }}>
+      <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
+        <Link href={`/admin/conteudo/${courseId}`} passHref>
+          <IconButton>
+            <ArrowBackIcon />
+          </IconButton>
         </Link>
-        <div>
-          <h1 className="text-3xl font-bold">Editar Curso</h1>
-          <p className="text-muted-foreground mt-1">
+        <Box>
+          <Typography variant="h3" fontWeight="bold">
+            Editar Curso
+          </Typography>
+          <Typography variant="body1" color="text.secondary" sx={{ mt: 0.5 }}>
             Atualize as informações do curso
-          </p>
-        </div>
-      </div>
+          </Typography>
+        </Box>
+      </Box>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Informações do Curso</CardTitle>
-          <CardDescription>
-            Modifique os dados do curso conforme necessário
-          </CardDescription>
-        </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <Typography variant="h6" fontWeight="bold" gutterBottom>
+            Informações do Curso
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            Modifique os dados do curso conforme necessário
+          </Typography>
+
+          <Box component="form" onSubmit={handleSubmit}>
             {error && (
-              <div className="bg-destructive/15 text-destructive text-sm p-3 rounded-md border border-destructive/50">
+              <Alert severity="error" sx={{ mb: 3 }}>
                 {error}
-              </div>
+              </Alert>
             )}
 
-            <div className="space-y-2">
-              <Label htmlFor="title">Título do Curso *</Label>
-              <Input
-                id="title"
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+              <TextField
+                fullWidth
+                label="Título do Curso"
                 name="title"
                 defaultValue={course.title}
                 placeholder="Ex: Desenvolvimento Web Full-Stack"
                 required
-                minLength={3}
               />
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="description">Descrição *</Label>
-              <Textarea
-                id="description"
+              <TextField
+                fullWidth
+                label="Descrição"
                 name="description"
                 defaultValue={course.description}
                 placeholder="Descreva o que os alunos vão aprender neste curso..."
                 required
-                minLength={10}
+                multiline
                 rows={4}
               />
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="duration">Duração (em horas) *</Label>
-              <Input
-                id="duration"
+              <TextField
+                fullWidth
+                label="Duração (em horas)"
                 name="duration"
                 type="number"
                 defaultValue={course.duration}
                 placeholder="Ex: 120"
                 required
-                min={1}
               />
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="prerequisites">
-                Pré-requisitos (um por linha)
-              </Label>
-              <Textarea
-                id="prerequisites"
-                name="prerequisites"
-                defaultValue={course.prerequisites.join("\n")}
-                placeholder="Ex:&#10;Conhecimento básico de HTML&#10;Noções de programação"
-                rows={4}
-              />
-              <p className="text-xs text-muted-foreground">
-                Digite cada pré-requisito em uma linha separada
-              </p>
-            </div>
+              <Box>
+                <TextField
+                  fullWidth
+                  label="Pré-requisitos (um por linha)"
+                  name="prerequisites"
+                  defaultValue={course.prerequisites.join("\n")}
+                  placeholder="Ex:&#10;Conhecimento básico de HTML&#10;Noções de programação"
+                  multiline
+                  rows={4}
+                />
+                <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: "block" }}>
+                  Digite cada pré-requisito em uma linha separada
+                </Typography>
+              </Box>
 
-            <div className="space-y-2">
-              <Label htmlFor="isActive">Status do Curso</Label>
-              <select
-                id="isActive"
-                name="isActive"
-                defaultValue={course.isActive ? "true" : "false"}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <option value="true">Ativo</option>
-                <option value="false">Inativo</option>
-              </select>
-              <p className="text-xs text-muted-foreground">
-                Cursos inativos não aparecem para os alunos
-              </p>
-            </div>
+              <Box>
+                <TextField
+                  fullWidth
+                  select
+                  label="Status do Curso"
+                  name="isActive"
+                  defaultValue={course.isActive ? "true" : "false"}
+                >
+                  <MenuItem value="true">Ativo</MenuItem>
+                  <MenuItem value="false">Inativo</MenuItem>
+                </TextField>
+                <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: "block" }}>
+                  Cursos inativos não aparecem para os alunos
+                </Typography>
+              </Box>
 
-            <div className="flex gap-3 pt-4">
-              <Button type="submit" disabled={saving} className="flex-1">
-                {saving ? "Salvando..." : "Salvar Alterações"}
-              </Button>
-              <Link href={`/admin/conteudo/${courseId}`}>
-                <Button type="button" variant="outline">
-                  Cancelar
+              <Box sx={{ display: "flex", gap: 2, pt: 2 }}>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  disabled={saving}
+                  sx={{ flex: 1 }}
+                >
+                  {saving ? "Salvando..." : "Salvar Alterações"}
                 </Button>
-              </Link>
-            </div>
-          </form>
+                <Link href={`/admin/conteudo/${courseId}`} passHref>
+                  <Button variant="outlined">
+                    Cancelar
+                  </Button>
+                </Link>
+              </Box>
+            </Box>
+          </Box>
         </CardContent>
       </Card>
-    </div>
+    </Box>
   );
 }

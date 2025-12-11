@@ -1,12 +1,25 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Users, Plus, Edit, Trash2, Search } from "lucide-react";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import Grid from "@mui/material/Grid";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Button from "@mui/material/Button";
+import TextField from "@mui/material/TextField";
+import Chip from "@mui/material/Chip";
+import IconButton from "@mui/material/IconButton";
+import InputAdornment from "@mui/material/InputAdornment";
+import MenuItem from "@mui/material/MenuItem";
+import CircularProgress from "@mui/material/CircularProgress";
+import Stack from "@mui/material/Stack";
+import Divider from "@mui/material/Divider";
+import PeopleIcon from "@mui/icons-material/People";
+import AddIcon from "@mui/icons-material/Add";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
+import SearchIcon from "@mui/icons-material/Search";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -143,94 +156,105 @@ export default function UsuariosPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <p className="text-muted-foreground">Carregando usuários...</p>
-      </div>
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 400 }}>
+        <CircularProgress />
+      </Box>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Gerenciar Usuários</h1>
-          <p className="text-muted-foreground mt-1">
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <Box>
+          <Typography variant="h3" fontWeight="bold">
+            Gerenciar Usuários
+          </Typography>
+          <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
             Administre todos os usuários da plataforma
-          </p>
-        </div>
-        <Button onClick={() => setShowCreateForm(!showCreateForm)}>
-          <Plus className="w-4 h-4 mr-2" />
+          </Typography>
+        </Box>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => setShowCreateForm(!showCreateForm)}
+        >
           Novo Usuário
         </Button>
-      </div>
+      </Box>
 
-      <div className="grid gap-6 md:grid-cols-3">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="w-5 h-5" />
-              Total
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{users.length}</div>
-          </CardContent>
-        </Card>
+      <Grid container spacing={3}>
+        <Grid item xs={12} sm={6} md={4}>
+          <Card>
+            <CardContent>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                <PeopleIcon fontSize="small" />
+                <Typography variant="body2" color="text.secondary">
+                  Total
+                </Typography>
+              </Box>
+              <Typography variant="h4" fontWeight="bold">
+                {users.length}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Alunos</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">
-              {users.filter((u) => u.role === "aluno").length}
-            </div>
-          </CardContent>
-        </Card>
+        <Grid item xs={12} sm={6} md={4}>
+          <Card>
+            <CardContent>
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                Alunos
+              </Typography>
+              <Typography variant="h4" fontWeight="bold">
+                {users.filter((u) => u.role === "aluno").length}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Instrutores</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">
-              {users.filter((u) => u.role === "instrutor").length}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+        <Grid item xs={12} sm={6} md={4}>
+          <Card>
+            <CardContent>
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                Instrutores
+              </Typography>
+              <Typography variant="h4" fontWeight="bold">
+                {users.filter((u) => u.role === "instrutor").length}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
 
       {showCreateForm && (
         <Card>
-          <CardHeader>
-            <CardTitle>
+          <CardContent>
+            <Typography variant="h6" fontWeight="bold" gutterBottom>
               {editingUser ? "Editar Usuário" : "Criar Novo Usuário"}
-            </CardTitle>
-            <CardDescription>
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
               {editingUser
                 ? "Atualize as informações do usuário"
                 : "Preencha os dados para criar um novo usuário"}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Nome *</Label>
-                  <Input
-                    id="name"
+            </Typography>
+            <Box component="form" onSubmit={handleSubmit}>
+              <Grid container spacing={2}>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="Nome"
                     value={formData.name}
                     onChange={(e) =>
                       setFormData({ ...formData, name: e.target.value })
                     }
                     required
                   />
-                </div>
+                </Grid>
 
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email *</Label>
-                  <Input
-                    id="email"
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="Email"
                     type="email"
                     value={formData.email}
                     onChange={(e) =>
@@ -238,16 +262,12 @@ export default function UsuariosPage() {
                     }
                     required
                   />
-                </div>
-              </div>
+                </Grid>
 
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="password">
-                    Senha {editingUser ? "(deixe em branco para não alterar)" : "*"}
-                  </Label>
-                  <Input
-                    id="password"
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label={`Senha ${editingUser ? "(deixe em branco para não alterar)" : ""}`}
                     type="password"
                     value={formData.password}
                     onChange={(e) =>
@@ -255,12 +275,13 @@ export default function UsuariosPage() {
                     }
                     required={!editingUser}
                   />
-                </div>
+                </Grid>
 
-                <div className="space-y-2">
-                  <Label htmlFor="role">Função *</Label>
-                  <select
-                    id="role"
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    select
+                    label="Função"
                     value={formData.role}
                     onChange={(e) =>
                       setFormData({
@@ -268,106 +289,125 @@ export default function UsuariosPage() {
                         role: e.target.value as "aluno" | "instrutor" | "admin",
                       })
                     }
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    <option value="aluno">Aluno</option>
-                    <option value="instrutor">Instrutor</option>
-                    <option value="admin">Admin</option>
-                  </select>
-                </div>
-              </div>
+                    <MenuItem value="aluno">Aluno</MenuItem>
+                    <MenuItem value="instrutor">Instrutor</MenuItem>
+                    <MenuItem value="admin">Admin</MenuItem>
+                  </TextField>
+                </Grid>
 
-              <div className="flex gap-3">
-                <Button type="submit" disabled={saving}>
-                  {saving ? "Salvando..." : editingUser ? "Salvar" : "Criar"}
-                </Button>
-                <Button type="button" variant="outline" onClick={cancelForm}>
-                  Cancelar
-                </Button>
-              </div>
-            </form>
+                <Grid item xs={12}>
+                  <Box sx={{ display: "flex", gap: 2 }}>
+                    <Button
+                      type="submit"
+                      variant="contained"
+                      disabled={saving}
+                    >
+                      {saving ? "Salvando..." : editingUser ? "Salvar" : "Criar"}
+                    </Button>
+                    <Button variant="outlined" onClick={cancelForm}>
+                      Cancelar
+                    </Button>
+                  </Box>
+                </Grid>
+              </Grid>
+            </Box>
           </CardContent>
         </Card>
       )}
 
       <Card>
-        <CardHeader>
-          <div className="flex items-center gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por nome ou email..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-          </div>
-        </CardHeader>
         <CardContent>
+          <TextField
+            fullWidth
+            placeholder="Buscar por nome ou email..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+            }}
+            sx={{ mb: 3 }}
+          />
+
           {filteredUsers.length === 0 ? (
-            <div className="text-center py-12">
-              <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">
+            <Box sx={{ textAlign: "center", py: 8 }}>
+              <PeopleIcon sx={{ fontSize: 48, color: "text.secondary", mb: 2 }} />
+              <Typography variant="body1" color="text.secondary">
                 {search ? "Nenhum usuário encontrado" : "Nenhum usuário cadastrado"}
-              </p>
-            </div>
+              </Typography>
+            </Box>
           ) : (
-            <div className="space-y-2">
+            <Stack spacing={2}>
               {filteredUsers.map((user) => (
-                <div
+                <Box
                   key={user._id}
-                  className="flex items-center gap-4 p-4 rounded-lg border hover:bg-muted/50 transition-colors"
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 2,
+                    p: 2,
+                    border: "1px solid",
+                    borderColor: "divider",
+                    borderRadius: 1,
+                    "&:hover": {
+                      bgcolor: "action.hover",
+                    },
+                  }}
                 >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-medium truncate">{user.name}</h3>
-                      <Badge
-                        variant={
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
+                      <Typography variant="body1" fontWeight="medium" noWrap>
+                        {user.name}
+                      </Typography>
+                      <Chip
+                        label={user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                        color={
                           user.role === "admin"
-                            ? "destructive"
+                            ? "error"
                             : user.role === "instrutor"
                             ? "secondary"
-                            : "default"
+                            : "primary"
                         }
-                      >
-                        {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground truncate">
+                        size="small"
+                      />
+                    </Box>
+                    <Typography variant="body2" color="text.secondary" noWrap>
                       {user.email}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: "block" }}>
                       Criado{" "}
                       {formatDistanceToNow(new Date(user.createdAt), {
                         addSuffix: true,
                         locale: ptBR,
                       })}
-                    </p>
-                  </div>
+                    </Typography>
+                  </Box>
 
-                  <div className="flex gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
+                  <Box sx={{ display: "flex", gap: 1 }}>
+                    <IconButton
+                      size="small"
                       onClick={() => startEdit(user)}
                     >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
+                      <EditIcon fontSize="small" />
+                    </IconButton>
+                    <IconButton
+                      size="small"
+                      color="error"
                       onClick={() => handleDelete(user._id)}
                     >
-                      <Trash2 className="w-4 h-4 text-destructive" />
-                    </Button>
-                  </div>
-                </div>
+                      <DeleteIcon fontSize="small" />
+                    </IconButton>
+                  </Box>
+                </Box>
               ))}
-            </div>
+            </Stack>
           )}
         </CardContent>
       </Card>
-    </div>
+    </Box>
   );
 }

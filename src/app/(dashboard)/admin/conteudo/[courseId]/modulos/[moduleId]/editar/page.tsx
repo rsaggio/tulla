@@ -3,12 +3,17 @@
 import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft } from "lucide-react";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import Grid from "@mui/material/Grid";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Button from "@mui/material/Button";
+import TextField from "@mui/material/TextField";
+import IconButton from "@mui/material/IconButton";
+import CircularProgress from "@mui/material/CircularProgress";
+import Alert from "@mui/material/Alert";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 
 interface Module {
   _id: string;
@@ -33,7 +38,8 @@ export default function EditarModuloPage({
 
   useEffect(() => {
     loadModule();
-  }, [courseId, moduleId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function loadModule() {
     try {
@@ -109,151 +115,159 @@ export default function EditarModuloPage({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <p className="text-muted-foreground">Carregando módulo...</p>
-      </div>
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 400 }}>
+        <CircularProgress />
+      </Box>
     );
   }
 
   if (!module) {
     return (
-      <div className="max-w-3xl space-y-6">
+      <Box sx={{ maxWidth: 800 }}>
         <Card>
-          <CardContent className="py-12 text-center">
-            <p className="text-muted-foreground">{error || "Módulo não encontrado"}</p>
-            <Link href={`/admin/conteudo/${courseId}`}>
-              <Button variant="outline" className="mt-4">
+          <CardContent sx={{ py: 8, textAlign: "center" }}>
+            <Typography variant="body1" color="text.secondary" gutterBottom>
+              {error || "Módulo não encontrado"}
+            </Typography>
+            <Link href={`/admin/conteudo/${courseId}`} passHref>
+              <Button variant="outlined" sx={{ mt: 2 }}>
                 Voltar ao Curso
               </Button>
             </Link>
           </CardContent>
         </Card>
-      </div>
+      </Box>
     );
   }
 
   return (
-    <div className="max-w-3xl space-y-6">
-      <div className="flex items-center gap-4">
-        <Link href={`/admin/conteudo/${courseId}/modulos/${moduleId}`}>
-          <Button variant="ghost" size="icon">
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
+    <Box sx={{ maxWidth: 800 }}>
+      <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
+        <Link href={`/admin/conteudo/${courseId}/modulos/${moduleId}`} passHref>
+          <IconButton>
+            <ArrowBackIcon />
+          </IconButton>
         </Link>
-        <div>
-          <h1 className="text-3xl font-bold">Editar Módulo</h1>
-          <p className="text-muted-foreground mt-1">
+        <Box>
+          <Typography variant="h3" fontWeight="bold">
+            Editar Módulo
+          </Typography>
+          <Typography variant="body1" color="text.secondary" sx={{ mt: 0.5 }}>
             Atualize as informações do módulo
-          </p>
-        </div>
-      </div>
+          </Typography>
+        </Box>
+      </Box>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Informações do Módulo</CardTitle>
-          <CardDescription>
-            Modifique os dados do módulo conforme necessário
-          </CardDescription>
-        </CardHeader>
+      <Card sx={{ mb: 3 }}>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <Typography variant="h6" fontWeight="bold" gutterBottom>
+            Informações do Módulo
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            Modifique os dados do módulo conforme necessário
+          </Typography>
+
+          <Box component="form" onSubmit={handleSubmit}>
             {error && (
-              <div className="bg-destructive/15 text-destructive text-sm p-3 rounded-md border border-destructive/50">
+              <Alert severity="error" sx={{ mb: 3 }}>
                 {error}
-              </div>
+              </Alert>
             )}
 
-            <div className="space-y-2">
-              <Label htmlFor="title">Título do Módulo *</Label>
-              <Input
-                id="title"
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+              <TextField
+                fullWidth
+                label="Título do Módulo"
                 name="title"
                 defaultValue={module.title}
                 placeholder="Ex: Introdução ao JavaScript"
                 required
-                minLength={3}
               />
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="description">Descrição *</Label>
-              <Textarea
-                id="description"
+              <TextField
+                fullWidth
+                label="Descrição"
                 name="description"
                 defaultValue={module.description}
                 placeholder="Descreva o conteúdo do módulo..."
                 required
-                minLength={10}
+                multiline
                 rows={4}
               />
-            </div>
 
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="order">Ordem *</Label>
-                <Input
-                  id="order"
-                  name="order"
-                  type="number"
-                  defaultValue={module.order}
-                  placeholder="Ex: 1"
-                  required
-                  min={1}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Define a ordem de exibição do módulo
-                </p>
-              </div>
+              <Grid container spacing={2}>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="Ordem"
+                    name="order"
+                    type="number"
+                    defaultValue={module.order}
+                    placeholder="Ex: 1"
+                    required
+                  />
+                  <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: "block" }}>
+                    Define a ordem de exibição do módulo
+                  </Typography>
+                </Grid>
 
-              <div className="space-y-2">
-                <Label htmlFor="estimatedHours">Horas Estimadas *</Label>
-                <Input
-                  id="estimatedHours"
-                  name="estimatedHours"
-                  type="number"
-                  defaultValue={module.estimatedHours}
-                  placeholder="Ex: 8"
-                  required
-                  min={1}
-                />
-              </div>
-            </div>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="Horas Estimadas"
+                    name="estimatedHours"
+                    type="number"
+                    defaultValue={module.estimatedHours}
+                    placeholder="Ex: 8"
+                    required
+                  />
+                </Grid>
+              </Grid>
 
-            <div className="flex gap-3 pt-4">
-              <Button type="submit" disabled={saving} className="flex-1">
-                {saving ? "Salvando..." : "Salvar Alterações"}
-              </Button>
-              <Link href={`/admin/conteudo/${courseId}/modulos/${moduleId}`}>
-                <Button type="button" variant="outline">
-                  Cancelar
+              <Box sx={{ display: "flex", gap: 2, pt: 2 }}>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  disabled={saving}
+                  sx={{ flex: 1 }}
+                >
+                  {saving ? "Salvando..." : "Salvar Alterações"}
                 </Button>
-              </Link>
-            </div>
-          </form>
+                <Link href={`/admin/conteudo/${courseId}/modulos/${moduleId}`} passHref>
+                  <Button variant="outlined">
+                    Cancelar
+                  </Button>
+                </Link>
+              </Box>
+            </Box>
+          </Box>
         </CardContent>
       </Card>
 
-      <Card className="border-destructive">
-        <CardHeader>
-          <CardTitle className="text-destructive">Zona de Perigo</CardTitle>
-          <CardDescription>
-            Ações irreversíveis que afetam este módulo
-          </CardDescription>
-        </CardHeader>
+      <Card sx={{ borderColor: "error.main", borderWidth: 1 }}>
         <CardContent>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium">Excluir Módulo</p>
-              <p className="text-sm text-muted-foreground">
+          <Typography variant="h6" fontWeight="bold" color="error" gutterBottom>
+            Zona de Perigo
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            Ações irreversíveis que afetam este módulo
+          </Typography>
+
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Box>
+              <Typography variant="body1" fontWeight="medium">
+                Excluir Módulo
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
                 Remove o módulo e todas as suas aulas permanentemente
-              </p>
-            </div>
-            <Button variant="destructive" onClick={handleDelete}>
+              </Typography>
+            </Box>
+            <Button variant="contained" color="error" onClick={handleDelete}>
               Excluir Módulo
             </Button>
-          </div>
+          </Box>
         </CardContent>
       </Card>
-    </div>
+    </Box>
   );
 }

@@ -2,10 +2,23 @@
 
 import { useState, useEffect, use } from "react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Edit, Plus, BookOpen, FolderKanban, Clock } from "lucide-react";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import Grid from "@mui/material/Grid";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
+import IconButton from "@mui/material/IconButton";
+import CircularProgress from "@mui/material/CircularProgress";
+import Divider from "@mui/material/Divider";
+import Stack from "@mui/material/Stack";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import EditIcon from "@mui/icons-material/Edit";
+import AddIcon from "@mui/icons-material/Add";
+import MenuBookIcon from "@mui/icons-material/MenuBook";
+import FolderIcon from "@mui/icons-material/Folder";
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
 
 interface Module {
   _id: string;
@@ -33,7 +46,8 @@ export default function CursoDetalhesPage({ params }: { params: Promise<{ course
 
   useEffect(() => {
     loadCourse();
-  }, [courseId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function loadCourse() {
     try {
@@ -51,187 +65,216 @@ export default function CursoDetalhesPage({ params }: { params: Promise<{ course
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <p className="text-muted-foreground">Carregando curso...</p>
-      </div>
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 400 }}>
+        <CircularProgress />
+      </Box>
     );
   }
 
   if (!course) {
     return (
-      <div className="space-y-6">
+      <Box>
         <Card>
-          <CardContent className="py-12 text-center">
-            <p className="text-muted-foreground">Curso não encontrado</p>
-            <Link href="/admin/conteudo">
-              <Button variant="outline" className="mt-4">
-                Voltar para Cursos
-              </Button>
-            </Link>
+          <CardContent sx={{ py: 8, textAlign: "center" }}>
+            <Typography variant="body1" color="text.secondary" gutterBottom>
+              Curso não encontrado
+            </Typography>
+            <Box sx={{ mt: 2 }}>
+              <Link href="/admin/conteudo" passHref>
+                <Button variant="outlined">
+                  Voltar para Cursos
+                </Button>
+              </Link>
+            </Box>
           </CardContent>
         </Card>
-      </div>
+      </Box>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Link href="/admin/conteudo">
-            <Button variant="ghost" size="icon">
-              <ArrowLeft className="w-5 h-5" />
-            </Button>
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <Link href="/admin/conteudo" passHref>
+            <IconButton>
+              <ArrowBackIcon />
+            </IconButton>
           </Link>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-3xl font-bold">{course.title}</h1>
-              <Badge variant={course.isActive ? "default" : "secondary"}>
-                {course.isActive ? "Ativo" : "Inativo"}
-              </Badge>
-            </div>
-            <p className="text-muted-foreground mt-1">{course.description}</p>
-          </div>
-        </div>
-        <Link href={`/admin/conteudo/${courseId}/editar`}>
-          <Button>
-            <Edit className="w-4 h-4 mr-2" />
+          <Box>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
+              <Typography variant="h3" fontWeight="bold">
+                {course.title}
+              </Typography>
+              <Chip
+                label={course.isActive ? "Ativo" : "Inativo"}
+                color={course.isActive ? "primary" : "default"}
+                size="small"
+              />
+            </Box>
+            <Typography variant="body1" color="text.secondary">
+              {course.description}
+            </Typography>
+          </Box>
+        </Box>
+        <Link href={`/admin/conteudo/${courseId}/editar`} passHref>
+          <Button variant="contained" startIcon={<EditIcon />}>
             Editar Curso
           </Button>
         </Link>
-      </div>
+      </Box>
 
-      <div className="grid gap-6 md:grid-cols-3">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="w-5 h-5" />
-              Duração Total
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{course.duration}h</div>
-          </CardContent>
-        </Card>
+      <Grid container spacing={3}>
+        <Grid item xs={12} sm={6} md={4}>
+          <Card>
+            <CardContent>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                <AccessTimeIcon fontSize="small" />
+                <Typography variant="body2" color="text.secondary">
+                  Duração Total
+                </Typography>
+              </Box>
+              <Typography variant="h4" fontWeight="bold">
+                {course.duration}h
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BookOpen className="w-5 h-5" />
-              Módulos
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{course.modules?.length || 0}</div>
-          </CardContent>
-        </Card>
+        <Grid item xs={12} sm={6} md={4}>
+          <Card>
+            <CardContent>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                <MenuBookIcon fontSize="small" />
+                <Typography variant="body2" color="text.secondary">
+                  Módulos
+                </Typography>
+              </Box>
+              <Typography variant="h4" fontWeight="bold">
+                {course.modules?.length || 0}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FolderKanban className="w-5 h-5" />
-              Aulas Totais
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">
-              {course.modules?.reduce((acc, m) => acc + (m.lessons?.length || 0), 0) || 0}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+        <Grid item xs={12} sm={6} md={4}>
+          <Card>
+            <CardContent>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                <FolderIcon fontSize="small" />
+                <Typography variant="body2" color="text.secondary">
+                  Aulas Totais
+                </Typography>
+              </Box>
+              <Typography variant="h4" fontWeight="bold">
+                {course.modules?.reduce((acc, m) => acc + (m.lessons?.length || 0), 0) || 0}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
 
       {course.prerequisites && course.prerequisites.length > 0 && (
         <Card>
-          <CardHeader>
-            <CardTitle>Pré-requisitos</CardTitle>
-          </CardHeader>
           <CardContent>
-            <ul className="list-disc list-inside space-y-1">
+            <Typography variant="h6" fontWeight="bold" gutterBottom>
+              Pré-requisitos
+            </Typography>
+            <Box component="ul" sx={{ listStyle: "disc", pl: 3, m: 0 }}>
               {course.prerequisites.map((prereq, index) => (
-                <li key={index} className="text-sm">
+                <Typography component="li" key={index} variant="body2" sx={{ mb: 0.5 }}>
                   {prereq}
-                </li>
+                </Typography>
               ))}
-            </ul>
+            </Box>
           </CardContent>
         </Card>
       )}
 
       <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Módulos do Curso</CardTitle>
-              <CardDescription>
-                Organize o conteúdo em módulos e aulas
-              </CardDescription>
-            </div>
-            <Link href={`/admin/conteudo/${courseId}/modulos/novo`}>
-              <Button>
-                <Plus className="w-4 h-4 mr-2" />
-                Novo Módulo
-              </Button>
-            </Link>
-          </div>
-        </CardHeader>
         <CardContent>
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 3 }}>
+            <Box>
+              <Typography variant="h6" fontWeight="bold">
+                Módulos do Curso
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Organize o conteúdo em módulos e aulas
+              </Typography>
+            </Box>
+            <Box>
+              <Link href={`/admin/conteudo/${courseId}/modulos/novo`} passHref>
+                <Button variant="contained" startIcon={<AddIcon />}>
+                  Novo Módulo
+                </Button>
+              </Link>
+            </Box>
+          </Box>
+
           {!course.modules || course.modules.length === 0 ? (
-            <div className="text-center py-12">
-              <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground mb-4">
+            <Box sx={{ textAlign: "center", py: 8 }}>
+              <MenuBookIcon sx={{ fontSize: 48, color: "text.secondary", mb: 2 }} />
+              <Typography variant="body1" color="text.secondary" gutterBottom>
                 Nenhum módulo criado ainda
-              </p>
-              <Link href={`/admin/conteudo/${courseId}/modulos/novo`}>
-                <Button>
-                  <Plus className="w-4 h-4 mr-2" />
+              </Typography>
+              <Link href={`/admin/conteudo/${courseId}/modulos/novo`} passHref>
+                <Button variant="contained" startIcon={<AddIcon />} sx={{ mt: 2 }}>
                   Criar Primeiro Módulo
                 </Button>
               </Link>
-            </div>
+            </Box>
           ) : (
-            <div className="space-y-4">
+            <Stack spacing={2}>
               {course.modules
                 .sort((a, b) => a.order - b.order)
                 .map((module) => (
-                  <div
+                  <Box
                     key={module._id}
-                    className="flex items-center gap-4 p-4 rounded-lg border hover:bg-muted/50 transition-colors"
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 2,
+                      p: 2,
+                      border: "1px solid",
+                      borderColor: "divider",
+                      borderRadius: 1,
+                      "&:hover": {
+                        bgcolor: "action.hover",
+                      },
+                    }}
                   >
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-medium">
+                    <Box sx={{ flex: 1 }}>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
+                        <Typography variant="body1" fontWeight="medium">
                           Módulo {module.order}: {module.title}
-                        </h3>
-                        <Badge variant="outline">
-                          {module.estimatedHours}h
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground">
+                        </Typography>
+                        <Chip label={`${module.estimatedHours}h`} size="small" variant="outlined" />
+                      </Box>
+                      <Typography variant="body2" color="text.secondary" gutterBottom>
                         {module.description}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
                         {module.lessons?.length || 0} aulas
-                      </p>
-                    </div>
-                    <div className="flex gap-2">
-                      <Link href={`/admin/conteudo/${courseId}/modulos/${module._id}`}>
-                        <Button variant="outline" size="sm">
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: "flex", gap: 1 }}>
+                      <Link href={`/admin/conteudo/${courseId}/modulos/${module._id}`} passHref>
+                        <Button variant="outlined" size="small">
                           Ver Detalhes
                         </Button>
                       </Link>
-                      <Link href={`/admin/conteudo/${courseId}/modulos/${module._id}/editar`}>
-                        <Button variant="ghost" size="sm">
-                          <Edit className="w-4 h-4" />
-                        </Button>
+                      <Link href={`/admin/conteudo/${courseId}/modulos/${module._id}/editar`} passHref>
+                        <IconButton size="small">
+                          <EditIcon fontSize="small" />
+                        </IconButton>
                       </Link>
-                    </div>
-                  </div>
+                    </Box>
+                  </Box>
                 ))}
-            </div>
+            </Stack>
           )}
         </CardContent>
       </Card>
-    </div>
+    </Box>
   );
 }

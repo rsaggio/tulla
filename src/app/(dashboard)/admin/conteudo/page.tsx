@@ -2,10 +2,20 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, BookOpen } from "lucide-react";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import Grid from "@mui/material/Grid";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
+import IconButton from "@mui/material/IconButton";
+import CircularProgress from "@mui/material/CircularProgress";
+import Divider from "@mui/material/Divider";
+import AddIcon from "@mui/icons-material/Add";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
+import MenuBookIcon from "@mui/icons-material/MenuBook";
 
 interface Course {
   _id: string;
@@ -57,94 +67,150 @@ export default function AdminConteudoPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <p className="text-muted-foreground">Carregando...</p>
-      </div>
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 400 }}>
+        <CircularProgress />
+      </Box>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Gestão de Conteúdo</h1>
-          <p className="text-muted-foreground mt-1">
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <Box>
+          <Typography variant="h3" fontWeight="bold">
+            Gestão de Conteúdo
+          </Typography>
+          <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
             Gerencie cursos, módulos, aulas e projetos
-          </p>
-        </div>
-        <Link href="/admin/conteudo/novo">
-          <Button>
-            <Plus className="w-4 h-4 mr-2" />
+          </Typography>
+        </Box>
+        <Link href="/admin/conteudo/novo" passHref>
+          <Button variant="contained" startIcon={<AddIcon />}>
             Novo Curso
           </Button>
         </Link>
-      </div>
+      </Box>
 
       {courses.length === 0 ? (
         <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <BookOpen className="w-12 h-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium mb-2">Nenhum curso criado</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Comece criando seu primeiro curso
-            </p>
-            <Link href="/admin/conteudo/novo">
-              <Button>
-                <Plus className="w-4 h-4 mr-2" />
-                Criar Primeiro Curso
-              </Button>
-            </Link>
+          <CardContent>
+            <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", py: 8 }}>
+              <MenuBookIcon sx={{ fontSize: 48, color: "text.secondary", mb: 2 }} />
+              <Typography variant="h6" fontWeight="medium" gutterBottom>
+                Nenhum curso criado
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                Comece criando seu primeiro curso
+              </Typography>
+              <Link href="/admin/conteudo/novo" passHref>
+                <Button variant="contained" startIcon={<AddIcon />}>
+                  Criar Primeiro Curso
+                </Button>
+              </Link>
+            </Box>
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <Grid container spacing={3}>
           {courses.map((course) => (
-            <Card key={course._id} className="hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <CardTitle className="line-clamp-1">{course.title}</CardTitle>
-                    <CardDescription className="mt-1 line-clamp-2">
-                      {course.description}
-                    </CardDescription>
-                  </div>
-                  <Badge variant={course.isActive ? "default" : "outline"}>
-                    {course.isActive ? "Ativo" : "Inativo"}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Duração:</span>
-                    <span className="font-medium">{course.duration}h</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Módulos:</span>
-                    <span className="font-medium">{course.modules?.length || 0}</span>
-                  </div>
+            <Grid item xs={12} sm={6} lg={4} key={course._id}>
+              <Card
+                sx={{
+                  height: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                  "&:hover": {
+                    boxShadow: 6,
+                  },
+                  transition: "box-shadow 0.3s",
+                }}
+              >
+                <CardContent sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
+                  <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", mb: 2 }}>
+                    <Box sx={{ flex: 1, minWidth: 0, mr: 1 }}>
+                      <Typography
+                        variant="h6"
+                        fontWeight="bold"
+                        gutterBottom
+                        sx={{
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          display: "-webkit-box",
+                          WebkitLineClamp: 1,
+                          WebkitBoxOrient: "vertical",
+                        }}
+                      >
+                        {course.title}
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          display: "-webkit-box",
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: "vertical",
+                        }}
+                      >
+                        {course.description}
+                      </Typography>
+                    </Box>
+                    <Chip
+                      label={course.isActive ? "Ativo" : "Inativo"}
+                      color={course.isActive ? "primary" : "default"}
+                      size="small"
+                    />
+                  </Box>
 
-                  <div className="flex gap-2 pt-4 border-t">
-                    <Link href={`/admin/conteudo/${course._id}`} className="flex-1">
-                      <Button variant="outline" size="sm" className="w-full">
-                        <Edit className="w-4 h-4 mr-2" />
-                        Editar
-                      </Button>
-                    </Link>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => deleteCourse(course._id)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                  <Box sx={{ mt: "auto" }}>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        Duração:
+                      </Typography>
+                      <Typography variant="body2" fontWeight="medium">
+                        {course.duration}h
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        Módulos:
+                      </Typography>
+                      <Typography variant="body2" fontWeight="medium">
+                        {course.modules?.length || 0}
+                      </Typography>
+                    </Box>
+
+                    <Divider sx={{ mb: 2 }} />
+
+                    <Box sx={{ display: "flex", gap: 1 }}>
+                      <Box sx={{ flex: 1 }}>
+                        <Link href={`/admin/conteudo/${course._id}`} passHref>
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            startIcon={<EditIcon />}
+                            fullWidth
+                          >
+                            Editar
+                          </Button>
+                        </Link>
+                      </Box>
+                      <IconButton
+                        size="small"
+                        color="error"
+                        onClick={() => deleteCourse(course._id)}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
           ))}
-        </div>
+        </Grid>
       )}
-    </div>
+    </Box>
   );
 }

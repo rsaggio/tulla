@@ -1,109 +1,180 @@
 import { auth } from "@/auth";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import Link from "next/link";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import Grid from "@mui/material/Grid";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Button from "@mui/material/Button";
+import Stack from "@mui/material/Stack";
+import connectDB from "@/lib/db/mongodb";
+import User from "@/models/User";
+import Course from "@/models/Course";
+import Progress from "@/models/Progress";
 
 export default async function AdminPage() {
   const session = await auth();
 
+  // Buscar dados do banco
+  let totalUsers = 0;
+  let totalStudents = 0;
+  let activeStudents = 0;
+  let totalCourses = 0;
+  let completionRate = 0;
+
+  try {
+    await connectDB();
+
+    // Contagens básicas
+    totalUsers = await User.countDocuments();
+    totalStudents = await User.countDocuments({ role: "aluno" });
+    totalCourses = await Course.countDocuments();
+
+    // Alunos ativos (últimos 30 dias)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    activeStudents = await Progress.countDocuments({
+      lastActivityAt: { $gte: thirtyDaysAgo },
+    });
+
+    // Taxa de conclusão
+    const completedStudents = await Progress.countDocuments({
+      overallProgress: 100,
+    });
+    if (totalStudents > 0) {
+      completionRate = Math.round((completedStudents / totalStudents) * 100);
+    }
+  } catch (error) {
+    console.error("Erro ao carregar dados do dashboard:", error);
+  }
+
   return (
-    <div sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-      <div>
-        <h1 variant="h3" fontWeight="bold">Dashboard Administrativo</h1>
-        <p className="text-muted-foreground mt-1">
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+      <Box>
+        <Typography variant="h3" fontWeight="bold">
+          Dashboard Administrativo
+        </Typography>
+        <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
           Olá, {session?.user?.name}! Gerencie a plataforma
-        </p>
-      </div>
+        </Typography>
+      </Box>
 
-      <div className="grid gap-6 md:grid-cols-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>Total de Usuários</CardTitle>
-            <CardDescription>Todos os roles</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div variant="h3" fontWeight="bold">0</div>
-            <p className="text-sm text-muted-foreground mt-2">
-              Nenhum usuário cadastrado
-            </p>
-          </CardContent>
-        </Card>
+      <Grid container spacing={3}>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent>
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                Total de Usuários
+              </Typography>
+              <Typography variant="h4" fontWeight="bold">
+                {totalUsers}
+              </Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: "block" }}>
+                {totalUsers === 0 ? "Nenhum usuário cadastrado" : `${totalStudents} alunos`}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Alunos</CardTitle>
-            <CardDescription>Estudantes ativos</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div variant="h3" fontWeight="bold">0</div>
-            <p className="text-sm text-muted-foreground mt-2">
-              0 ativos
-            </p>
-          </CardContent>
-        </Card>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent>
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                Alunos
+              </Typography>
+              <Typography variant="h4" fontWeight="bold">
+                {totalStudents}
+              </Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: "block" }}>
+                {activeStudents} ativos (últimos 30 dias)
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Cursos</CardTitle>
-            <CardDescription>Conteúdo disponível</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div variant="h3" fontWeight="bold">0</div>
-            <p className="text-sm text-muted-foreground mt-2">
-              Nenhum curso criado
-            </p>
-          </CardContent>
-        </Card>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent>
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                Cursos
+              </Typography>
+              <Typography variant="h4" fontWeight="bold">
+                {totalCourses}
+              </Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: "block" }}>
+                {totalCourses === 0 ? "Nenhum curso criado" : `${totalCourses} ${totalCourses === 1 ? "curso" : "cursos"}`}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Taxa de Conclusão</CardTitle>
-            <CardDescription>Média geral</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div variant="h3" fontWeight="bold">-</div>
-            <p className="text-sm text-muted-foreground mt-2">
-              Dados insuficientes
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+        <Grid item xs={12} sm={6} md={3}>
+          <Card>
+            <CardContent>
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                Taxa de Conclusão
+              </Typography>
+              <Typography variant="h4" fontWeight="bold">
+                {totalStudents > 0 ? `${completionRate}%` : "-"}
+              </Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: "block" }}>
+                {totalStudents === 0 ? "Dados insuficientes" : "Alunos que completaram 100%"}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
 
-      <div container spacing={3}>
-        <Card>
-          <CardHeader>
-            <CardTitle>Ações Rápidas</CardTitle>
-            <CardDescription>
-              Tarefas administrativas comuns
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-              <button className="w-full text-left px-4 py-2 rounded-lg hover:bg-muted transition-colors">
-                Criar novo curso
-              </button>
-              <button className="w-full text-left px-4 py-2 rounded-lg hover:bg-muted transition-colors">
-                Adicionar usuário
-              </button>
-              <button className="w-full text-left px-4 py-2 rounded-lg hover:bg-muted transition-colors">
-                Ver métricas detalhadas
-              </button>
-            </div>
-          </CardContent>
-        </Card>
+      <Grid container spacing={3}>
+        <Grid item xs={12} md={6}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" fontWeight="bold" gutterBottom>
+                Ações Rápidas
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Tarefas administrativas comuns
+              </Typography>
+              <Stack spacing={1}>
+                <Link href="/admin/conteudo/novo" passHref>
+                  <Button variant="text" fullWidth sx={{ justifyContent: "flex-start" }}>
+                    Criar novo curso
+                  </Button>
+                </Link>
+                <Link href="/admin/usuarios" passHref>
+                  <Button variant="text" fullWidth sx={{ justifyContent: "flex-start" }}>
+                    Adicionar usuário
+                  </Button>
+                </Link>
+                <Link href="/admin/metricas" passHref>
+                  <Button variant="text" fullWidth sx={{ justifyContent: "flex-start" }}>
+                    Ver métricas detalhadas
+                  </Button>
+                </Link>
+              </Stack>
+            </CardContent>
+          </Card>
+        </Grid>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Alertas do Sistema</CardTitle>
-            <CardDescription>
-              Notificações importantes
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground text-center py-8">
-              Nenhum alerta no momento
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+        <Grid item xs={12} md={6}>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" fontWeight="bold" gutterBottom>
+                Alertas do Sistema
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Notificações importantes
+              </Typography>
+              <Box sx={{ py: 8, textAlign: "center" }}>
+                <Typography variant="body2" color="text.secondary">
+                  Nenhum alerta no momento
+                </Typography>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+    </Box>
   );
 }
