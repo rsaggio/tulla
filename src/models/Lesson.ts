@@ -1,11 +1,19 @@
 import mongoose, { Document, Schema } from "mongoose";
 
+export interface QuizQuestion {
+  question: string;
+  options: string[];
+  correctAnswer: number; // Índice da resposta correta (0-3)
+  explanation?: string; // Explicação da resposta correta
+}
+
 export interface ILesson extends Document {
   moduleId: mongoose.Types.ObjectId;
   title: string;
   content: string; // Markdown
   videoUrl?: string; // URL do vídeo após upload
   videoFileName?: string; // Nome original do arquivo
+  quiz?: QuizQuestion[]; // Perguntas do quiz
   order: number;
   type: "teoria" | "video" | "leitura" | "quiz" | "activity";
   duration?: number; // Duração estimada em minutos
@@ -36,6 +44,31 @@ const LessonSchema = new Schema<ILesson>(
     videoFileName: {
       type: String,
     },
+    quiz: [
+      {
+        question: {
+          type: String,
+          required: true,
+        },
+        options: {
+          type: [String],
+          required: true,
+          validate: {
+            validator: (v: string[]) => v.length === 4,
+            message: "Quiz deve ter exatamente 4 opções",
+          },
+        },
+        correctAnswer: {
+          type: Number,
+          required: true,
+          min: 0,
+          max: 3,
+        },
+        explanation: {
+          type: String,
+        },
+      },
+    ],
     order: {
       type: Number,
       required: [true, "Ordem da aula é obrigatória"],

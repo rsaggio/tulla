@@ -18,6 +18,7 @@ import LinearProgress from "@mui/material/LinearProgress";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import MarkdownEditor from "@/components/MarkdownEditor";
+import QuizEditor, { QuizQuestion } from "@/components/QuizEditor";
 
 interface Lesson {
   _id: string;
@@ -27,6 +28,7 @@ interface Lesson {
   order: number;
   videoUrl?: string;
   videoFileName?: string;
+  quiz?: QuizQuestion[];
   resources?: { title: string; url: string }[];
   moduleId: string;
 }
@@ -46,6 +48,8 @@ export default function EditarAulaPage({
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [lessonType, setLessonType] = useState("teoria");
+  const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
 
   useEffect(() => {
     loadLesson();
@@ -59,6 +63,8 @@ export default function EditarAulaPage({
         const data = await res.json();
         setLesson(data);
         setContent(data.content || "");
+        setLessonType(data.type || "teoria");
+        setQuizQuestions(data.quiz || []);
       } else {
         setError("Aula não encontrada");
       }
@@ -114,6 +120,7 @@ export default function EditarAulaPage({
         order: parseInt(formData.get("order") as string),
         videoUrl,
         videoFileName,
+        quiz: lessonType === "quiz" ? quizQuestions : undefined,
       };
 
       const res = await fetch(`/api/modules/${moduleId}/lessons/${lessonId}`, {
@@ -235,12 +242,14 @@ export default function EditarAulaPage({
                     select
                     label="Tipo"
                     name="type"
-                    defaultValue={lesson.type}
+                    value={lessonType}
+                    onChange={(e) => setLessonType(e.target.value)}
                     required
                   >
                     <MenuItem value="teoria">Teoria</MenuItem>
                     <MenuItem value="video">Vídeo</MenuItem>
-                    <MenuItem value="leitura">Leitura</MenuItem>
+                    <MenuItem value="quiz">Quiz</MenuItem>
+                    <MenuItem value="activity">Exercício Prático</MenuItem>
                   </TextField>
                 </Grid>
 
@@ -257,65 +266,71 @@ export default function EditarAulaPage({
                 </Grid>
               </Grid>
 
-              <Box>
-                <Typography variant="body2" fontWeight="medium" sx={{ mb: 1 }}>
-                  Vídeo da Aula
-                </Typography>
-                {lesson.videoUrl && !videoFile && (
-                  <Box sx={{ mb: 2, p: 2, bgcolor: "action.hover", borderRadius: 1 }}>
-                    <Typography variant="body2" color="text.secondary" gutterBottom>
-                      Vídeo atual: {lesson.videoFileName || "vídeo.mp4"}
-                    </Typography>
-                    <video
-                      controls
-                      style={{ width: "100%", maxWidth: "400px", borderRadius: "8px" }}
-                      src={lesson.videoUrl}
-                    >
-                      Seu navegador não suporta a tag de vídeo.
-                    </video>
-                  </Box>
-                )}
-                <Button
-                  component="label"
-                  variant="outlined"
-                  startIcon={<CloudUploadIcon />}
-                  sx={{ mb: 1 }}
-                >
-                  {videoFile ? "Alterar Vídeo" : lesson.videoUrl ? "Substituir Vídeo" : "Fazer Upload do Vídeo"}
-                  <input
-                    type="file"
-                    hidden
-                    accept="video/mp4,video/webm,video/ogg,video/quicktime"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        setVideoFile(file);
-                      }
-                    }}
-                  />
-                </Button>
-                {videoFile && (
-                  <Box sx={{ mt: 1 }}>
-                    <Typography variant="body2" color="text.secondary">
-                      Novo arquivo selecionado: {videoFile.name}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      Tamanho: {(videoFile.size / (1024 * 1024)).toFixed(2)} MB
-                    </Typography>
-                  </Box>
-                )}
-                {uploading && (
-                  <Box sx={{ mt: 2 }}>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                      Fazendo upload do vídeo...
-                    </Typography>
-                    <LinearProgress variant="determinate" value={uploadProgress} />
-                  </Box>
-                )}
-                <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: "block" }}>
-                  Formatos aceitos: MP4, WebM, OGG, MOV. Tamanho máximo: 500MB
-                </Typography>
-              </Box>
+              {lessonType === "video" && (
+                <Box>
+                  <Typography variant="body2" fontWeight="medium" sx={{ mb: 1 }}>
+                    Vídeo da Aula
+                  </Typography>
+                  {lesson.videoUrl && !videoFile && (
+                    <Box sx={{ mb: 2, p: 2, bgcolor: "action.hover", borderRadius: 1 }}>
+                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                        Vídeo atual: {lesson.videoFileName || "vídeo.mp4"}
+                      </Typography>
+                      <video
+                        controls
+                        style={{ width: "100%", maxWidth: "400px", borderRadius: "8px" }}
+                        src={lesson.videoUrl}
+                      >
+                        Seu navegador não suporta a tag de vídeo.
+                      </video>
+                    </Box>
+                  )}
+                  <Button
+                    component="label"
+                    variant="outlined"
+                    startIcon={<CloudUploadIcon />}
+                    sx={{ mb: 1 }}
+                  >
+                    {videoFile ? "Alterar Vídeo" : lesson.videoUrl ? "Substituir Vídeo" : "Fazer Upload do Vídeo"}
+                    <input
+                      type="file"
+                      hidden
+                      accept="video/mp4,video/webm,video/ogg,video/quicktime"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          setVideoFile(file);
+                        }
+                      }}
+                    />
+                  </Button>
+                  {videoFile && (
+                    <Box sx={{ mt: 1 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        Novo arquivo selecionado: {videoFile.name}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Tamanho: {(videoFile.size / (1024 * 1024)).toFixed(2)} MB
+                      </Typography>
+                    </Box>
+                  )}
+                  {uploading && (
+                    <Box sx={{ mt: 2 }}>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                        Fazendo upload do vídeo...
+                      </Typography>
+                      <LinearProgress variant="determinate" value={uploadProgress} />
+                    </Box>
+                  )}
+                  <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: "block" }}>
+                    Formatos aceitos: MP4, WebM, OGG, MOV. Tamanho máximo: 500MB
+                  </Typography>
+                </Box>
+              )}
+
+              {lessonType === "quiz" && (
+                <QuizEditor value={quizQuestions} onChange={setQuizQuestions} />
+              )}
 
               <MarkdownEditor
                 value={content}

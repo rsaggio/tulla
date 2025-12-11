@@ -16,6 +16,7 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import ReactMarkdown from "react-markdown";
+import QuizView, { QuizQuestion } from "@/components/QuizView";
 
 interface Lesson {
   _id: string;
@@ -23,6 +24,7 @@ interface Lesson {
   content: string;
   videoUrl?: string;
   videoFileName?: string;
+  quiz?: QuizQuestion[];
   type: string;
   resources?: { title: string; url: string }[];
   moduleId: string;
@@ -320,6 +322,24 @@ export default function AulaPage({ params }: { params: Promise<{ id: string }> }
               {lesson.content}
             </ReactMarkdown>
           </Box>
+
+          {lesson.quiz && lesson.quiz.length > 0 && (
+            <Box sx={{ my: 4 }}>
+              <Divider sx={{ mb: 3 }} />
+              <Typography variant="h5" fontWeight="bold" gutterBottom>
+                Quiz
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                Teste seus conhecimentos respondendo às perguntas abaixo
+              </Typography>
+              <QuizView
+                questions={lesson.quiz}
+                onComplete={(score, total) => {
+                  console.log(`Quiz completado: ${score}/${total}`);
+                }}
+              />
+            </Box>
+          )}
 
           {lesson.resources && lesson.resources.length > 0 && (
             <Box sx={{ mt: 4 }}>
