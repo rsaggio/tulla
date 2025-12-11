@@ -3,17 +3,26 @@
 import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
+import IconButton from "@mui/material/IconButton";
+import CircularProgress from "@mui/material/CircularProgress";
+import Divider from "@mui/material/Divider";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import ReactMarkdown from "react-markdown";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, CheckCircle2, ExternalLink } from "lucide-react";
 
 interface Lesson {
   _id: string;
   title: string;
   content: string;
   videoUrl?: string;
+  videoFileName?: string;
   type: string;
   resources?: { title: string; url: string }[];
   moduleId: string;
@@ -30,6 +39,7 @@ export default function AulaPage({ params }: { params: Promise<{ id: string }> }
   useEffect(() => {
     loadLesson();
     checkProgress();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   async function loadLesson() {
@@ -121,150 +131,264 @@ export default function AulaPage({ params }: { params: Promise<{ id: string }> }
     }
   }
 
+  const markdownComponents = {
+    h1: ({ children }: any) => (
+      <Typography variant="h3" fontWeight="bold" gutterBottom sx={{ mt: 4 }}>
+        {children}
+      </Typography>
+    ),
+    h2: ({ children }: any) => (
+      <Typography variant="h4" fontWeight="bold" gutterBottom sx={{ mt: 3 }}>
+        {children}
+      </Typography>
+    ),
+    h3: ({ children }: any) => (
+      <Typography variant="h5" fontWeight="bold" gutterBottom sx={{ mt: 2 }}>
+        {children}
+      </Typography>
+    ),
+    p: ({ children }: any) => (
+      <Typography variant="body1" paragraph sx={{ mb: 2, lineHeight: 1.8 }}>
+        {children}
+      </Typography>
+    ),
+    ul: ({ children }: any) => (
+      <Box component="ul" sx={{ pl: 3, my: 2 }}>
+        {children}
+      </Box>
+    ),
+    ol: ({ children }: any) => (
+      <Box component="ol" sx={{ pl: 3, my: 2 } as any}>
+        {children}
+      </Box>
+    ),
+    li: ({ children }: any) => (
+      <Typography component="li" variant="body1" sx={{ mb: 1 }}>
+        {children}
+      </Typography>
+    ),
+    code: ({ inline, children, ...props }: any) =>
+      inline ? (
+        <Box
+          component="code"
+          sx={{
+            bgcolor: "action.hover",
+            px: 0.5,
+            py: 0.25,
+            borderRadius: 0.5,
+            fontFamily: "monospace",
+            fontSize: "0.875em",
+          }}
+          {...props}
+        >
+          {children}
+        </Box>
+      ) : (
+        <Box
+          component="pre"
+          sx={{
+            bgcolor: "action.hover",
+            p: 2,
+            borderRadius: 1,
+            overflow: "auto",
+            my: 2,
+          }}
+        >
+          <Box
+            component="code"
+            sx={{
+              fontFamily: "monospace",
+              fontSize: "0.875rem",
+            }}
+            {...props}
+          >
+            {children}
+          </Box>
+        </Box>
+      ),
+    blockquote: ({ children }: any) => (
+      <Box
+        component="blockquote"
+        sx={{
+          borderLeft: "4px solid",
+          borderColor: "primary.main",
+          pl: 2,
+          py: 0.5,
+          my: 2,
+          fontStyle: "italic",
+          color: "text.secondary",
+        }}
+      >
+        {children}
+      </Box>
+    ),
+    a: ({ children, href }: any) => (
+      <Box
+        component="a"
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        sx={{
+          color: "primary.main",
+          textDecoration: "none",
+          "&:hover": {
+            textDecoration: "underline",
+          },
+        }}
+      >
+        {children}
+      </Box>
+    ),
+  };
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <p className="text-muted-foreground">Carregando aula...</p>
-      </div>
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 400 }}>
+        <CircularProgress />
+      </Box>
     );
   }
 
   if (!lesson) {
     return (
-      <div className="space-y-6">
-        <Link href="/aluno/curso">
-          <Button variant="ghost" size="sm">
-            <ArrowLeft className="w-4 h-4 mr-2" />
+      <Box sx={{ maxWidth: 900 }}>
+        <Link href="/aluno/curso" passHref>
+          <Button variant="text" startIcon={<ArrowBackIcon />} sx={{ mb: 3 }}>
             Voltar ao Curso
           </Button>
         </Link>
         <Card>
-          <CardContent className="py-12 text-center">
-            <p className="text-muted-foreground">Aula não encontrada</p>
+          <CardContent sx={{ py: 8, textAlign: "center" }}>
+            <Typography variant="body1" color="text.secondary">
+              Aula não encontrada
+            </Typography>
           </CardContent>
         </Card>
-      </div>
+      </Box>
     );
   }
 
   return (
-    <div className="space-y-6 max-w-4xl">
-      <div className="flex items-center justify-between">
-        <Link href="/aluno/curso">
-          <Button variant="ghost" size="sm">
-            <ArrowLeft className="w-4 h-4 mr-2" />
+    <Box sx={{ maxWidth: 1200 }}>
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 3 }}>
+        <Link href="/aluno/curso" passHref>
+          <Button variant="text" startIcon={<ArrowBackIcon />}>
             Voltar ao Curso
           </Button>
         </Link>
 
-        <div className="flex items-center gap-2">
-          <Badge variant={isCompleted ? "default" : "outline"}>
-            {isCompleted ? "Concluída" : "Em progresso"}
-          </Badge>
-          <Badge variant="secondary">{lesson.type}</Badge>
-        </div>
-      </div>
+        <Box sx={{ display: "flex", gap: 1 }}>
+          <Chip
+            label={isCompleted ? "Concluída" : "Em progresso"}
+            color={isCompleted ? "success" : "default"}
+            variant={isCompleted ? "filled" : "outlined"}
+          />
+          <Chip label={lesson.type} variant="outlined" />
+        </Box>
+      </Box>
 
       <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl">{lesson.title}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent sx={{ p: 4 }}>
+          <Typography variant="h4" fontWeight="bold" gutterBottom>
+            {lesson.title}
+          </Typography>
+
           {lesson.videoUrl && (
-            <div className="aspect-video bg-muted rounded-lg flex items-center justify-center">
-              <p className="text-muted-foreground">
-                Vídeo: {lesson.videoUrl}
-              </p>
-            </div>
+            <Box sx={{ my: 3 }}>
+              <video
+                controls
+                style={{
+                  width: "100%",
+                  maxHeight: "600px",
+                  borderRadius: "8px",
+                  backgroundColor: "#000"
+                }}
+                src={lesson.videoUrl}
+              >
+                Seu navegador não suporta a tag de vídeo.
+              </video>
+              {lesson.videoFileName && (
+                <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: "block" }}>
+                  {lesson.videoFileName}
+                </Typography>
+              )}
+            </Box>
           )}
 
-          <div className="prose prose-slate dark:prose-invert max-w-none">
-            <ReactMarkdown
-              components={{
-                code: ({ node, className, children, ...props }: any) => {
-                  const match = /language-(\w+)/.exec(className || "");
-                  return match ? (
-                    <pre className="bg-muted p-4 rounded-lg overflow-x-auto">
-                      <code className={className} {...props}>
-                        {children}
-                      </code>
-                    </pre>
-                  ) : (
-                    <code
-                      className="bg-muted px-1.5 py-0.5 rounded text-sm"
-                      {...props}
-                    >
-                      {children}
-                    </code>
-                  );
-                },
-                h1: ({ node, ...props }: any) => (
-                  <h1 className="text-3xl font-bold mt-8 mb-4" {...props} />
-                ),
-                h2: ({ node, ...props }: any) => (
-                  <h2 className="text-2xl font-bold mt-6 mb-3" {...props} />
-                ),
-                h3: ({ node, ...props }: any) => (
-                  <h3 className="text-xl font-bold mt-4 mb-2" {...props} />
-                ),
-                p: ({ node, ...props }: any) => (
-                  <p className="mb-4 leading-relaxed" {...props} />
-                ),
-                ul: ({ node, ...props }: any) => (
-                  <ul className="list-disc list-inside mb-4 space-y-2" {...props} />
-                ),
-                ol: ({ node, ...props }: any) => (
-                  <ol className="list-decimal list-inside mb-4 space-y-2" {...props} />
-                ),
-                a: ({ node, ...props }: any) => (
-                  <a className="text-primary hover:underline" {...props} />
-                ),
-              }}
-            >
+          <Box sx={{ my: 4 }}>
+            <ReactMarkdown components={markdownComponents}>
               {lesson.content}
             </ReactMarkdown>
-          </div>
+          </Box>
 
           {lesson.resources && lesson.resources.length > 0 && (
-            <div className="pt-6 border-t">
-              <h3 className="font-semibold mb-3">Recursos Adicionais</h3>
-              <div className="space-y-2">
+            <Box sx={{ mt: 4 }}>
+              <Divider sx={{ mb: 3 }} />
+              <Typography variant="h6" fontWeight="bold" gutterBottom>
+                Recursos Adicionais
+              </Typography>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
                 {lesson.resources.map((resource, index) => (
-                  <a
+                  <Card
                     key={index}
-                    href={resource.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 p-3 rounded-lg border hover:bg-muted/50 transition-colors"
+                    variant="outlined"
+                    sx={{
+                      transition: "all 0.2s",
+                      "&:hover": {
+                        bgcolor: "action.hover"
+                      }
+                    }}
                   >
-                    <ExternalLink className="w-4 h-4 text-muted-foreground" />
-                    <span className="flex-1">{resource.title}</span>
-                  </a>
+                    <CardContent sx={{ py: 2, px: 3 }}>
+                      <Box
+                        component="a"
+                        href={resource.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 2,
+                          textDecoration: "none",
+                          color: "inherit"
+                        }}
+                      >
+                        <OpenInNewIcon sx={{ color: "text.secondary" }} fontSize="small" />
+                        <Typography variant="body1" sx={{ flex: 1 }}>
+                          {resource.title}
+                        </Typography>
+                      </Box>
+                    </CardContent>
+                  </Card>
                 ))}
-              </div>
-            </div>
+              </Box>
+            </Box>
           )}
 
-          <div className="pt-6 border-t flex justify-end">
-            {!isCompleted ? (
-              <Button
-                size="lg"
-                onClick={markAsComplete}
-                disabled={completing}
-              >
-                <CheckCircle2 className="w-5 h-5 mr-2" />
-                {completing ? "Marcando..." : "Marcar como Concluída"}
-              </Button>
-            ) : (
-              <Button size="lg" variant="outline" asChild>
-                <Link href="/aluno/curso">
-                  Voltar ao Curso
+          <Box sx={{ mt: 4 }}>
+            <Divider sx={{ mb: 3 }} />
+            <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+              {!isCompleted ? (
+                <Button
+                  variant="contained"
+                  size="large"
+                  onClick={markAsComplete}
+                  disabled={completing}
+                  startIcon={<CheckCircleIcon />}
+                >
+                  {completing ? "Marcando..." : "Marcar como Concluída"}
+                </Button>
+              ) : (
+                <Link href="/aluno/curso" passHref>
+                  <Button variant="outlined" size="large">
+                    Voltar ao Curso
+                  </Button>
                 </Link>
-              </Button>
-            )}
-          </div>
+              )}
+            </Box>
+          </Box>
         </CardContent>
       </Card>
-    </div>
+    </Box>
   );
 }

@@ -13,7 +13,9 @@ import TextField from "@mui/material/TextField";
 import MenuItem from "@mui/material/MenuItem";
 import IconButton from "@mui/material/IconButton";
 import Alert from "@mui/material/Alert";
+import LinearProgress from "@mui/material/LinearProgress";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import MarkdownEditor from "@/components/MarkdownEditor";
 
 export default function NovaAulaPage({
@@ -26,6 +28,9 @@ export default function NovaAulaPage({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [content, setContent] = useState("");
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -33,17 +38,59 @@ export default function NovaAulaPage({
     setLoading(true);
 
     const formData = new FormData(e.currentTarget);
+    const lessonType = formData.get("type") as string;
 
-    const lessonData = {
-      title: formData.get("title") as string,
-      content: content,
-      type: formData.get("type") as string,
-      order: parseInt(formData.get("order") as string),
-      videoUrl: formData.get("videoUrl") as string || undefined,
-      moduleId,
-    };
+    console.log("=== FRONTEND: Criando aula ===");
+    console.log("Tipo da aula:", lessonType);
+    console.log("Arquivo de vídeo selecionado:", videoFile ? videoFile.name : "nenhum");
 
     try {
+      let videoUrl = undefined;
+      let videoFileName = undefined;
+
+      // Se for tipo vídeo e tiver arquivo, fazer upload
+      if (lessonType === "video" && videoFile) {
+        console.log("Iniciando upload do vídeo...");
+        setUploading(true);
+        setUploadProgress(0);
+
+        const uploadFormData = new FormData();
+        uploadFormData.append("video", videoFile);
+
+        console.log("Enviando requisição para /api/upload/video");
+        const uploadRes = await fetch("/api/upload/video", {
+          method: "POST",
+          body: uploadFormData,
+        });
+
+        console.log("Status da resposta:", uploadRes.status);
+
+        if (!uploadRes.ok) {
+          const errorData = await uploadRes.json();
+          console.error("Erro no upload:", errorData);
+          throw new Error(errorData.error || "Erro ao fazer upload do vídeo");
+        }
+
+        const uploadData = await uploadRes.json();
+        console.log("Upload bem-sucedido:", uploadData);
+        videoUrl = uploadData.videoUrl;
+        videoFileName = uploadData.fileName;
+        setUploading(false);
+        setUploadProgress(100);
+      } else {
+        console.log("Pulando upload: tipo não é vídeo ou arquivo não selecionado");
+      }
+
+      const lessonData = {
+        title: formData.get("title") as string,
+        content: content,
+        type: lessonType,
+        order: parseInt(formData.get("order") as string),
+        videoUrl,
+        videoFileName,
+        moduleId,
+      };
+
       const res = await fetch(`/api/modules/${moduleId}/lessons`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -57,9 +104,10 @@ export default function NovaAulaPage({
       router.push(`/admin/conteudo/${courseId}/modulos/${moduleId}`);
     } catch (error) {
       console.error("Erro:", error);
-      setError("Erro ao criar aula. Tente novamente.");
+      setError(error instanceof Error ? error.message : "Erro ao criar aula. Tente novamente.");
     } finally {
       setLoading(false);
+      setUploading(false);
     }
   }
 
@@ -136,15 +184,48 @@ export default function NovaAulaPage({
               </Grid>
 
               <Box>
-                <TextField
-                  fullWidth
-                  label="URL do Vídeo (opcional)"
-                  name="videoUrl"
-                  type="url"
-                  placeholder="https://youtube.com/watch?v=..."
-                />
+                <Typography variant="body2" fontWeight="medium" sx={{ mb: 1 }}>
+                  Vídeo da Aula
+                </Typography>
+                <Button
+                  component="label"
+                  variant="outlined"
+                  startIcon={<CloudUploadIcon />}
+                  sx={{ mb: 1 }}
+                >
+                  {videoFile ? "Alterar Vídeo" : "Fazer Upload do Vídeo"}
+                  <input
+                    type="file"
+                    hidden
+                    accept="video/mp4,video/webm,video/ogg,video/quicktime"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        setVideoFile(file);
+                      }
+                    }}
+                  />
+                </Button>
+                {videoFile && (
+                  <Box sx={{ mt: 1 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      Arquivo selecionado: {videoFile.name}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Tamanho: {(videoFile.size / (1024 * 1024)).toFixed(2)} MB
+                    </Typography>
+                  </Box>
+                )}
+                {uploading && (
+                  <Box sx={{ mt: 2 }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      Fazendo upload do vídeo...
+                    </Typography>
+                    <LinearProgress variant="determinate" value={uploadProgress} />
+                  </Box>
+                )}
                 <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: "block" }}>
-                  Link para vídeo do YouTube, Vimeo, etc.
+                  Formatos aceitos: MP4, WebM, OGG, MOV. Tamanho máximo: 500MB
                 </Typography>
               </Box>
 

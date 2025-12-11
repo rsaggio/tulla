@@ -14,7 +14,9 @@ import MenuItem from "@mui/material/MenuItem";
 import IconButton from "@mui/material/IconButton";
 import CircularProgress from "@mui/material/CircularProgress";
 import Alert from "@mui/material/Alert";
+import LinearProgress from "@mui/material/LinearProgress";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import MarkdownEditor from "@/components/MarkdownEditor";
 
 interface Lesson {
@@ -24,6 +26,7 @@ interface Lesson {
   type: string;
   order: number;
   videoUrl?: string;
+  videoFileName?: string;
   resources?: { title: string; url: string }[];
   moduleId: string;
 }
@@ -40,6 +43,9 @@ export default function EditarAulaPage({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [content, setContent] = useState("");
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   useEffect(() => {
     loadLesson();
@@ -70,16 +76,46 @@ export default function EditarAulaPage({
     setSaving(true);
 
     const formData = new FormData(e.currentTarget);
-
-    const lessonData = {
-      title: formData.get("title") as string,
-      content: content,
-      type: formData.get("type") as string,
-      order: parseInt(formData.get("order") as string),
-      videoUrl: formData.get("videoUrl") as string || undefined,
-    };
+    const lessonType = formData.get("type") as string;
 
     try {
+      let videoUrl = lesson?.videoUrl;
+      let videoFileName = lesson?.videoFileName;
+
+      // Se for tipo vídeo e tiver novo arquivo, fazer upload
+      if (lessonType === "video" && videoFile) {
+        setUploading(true);
+        setUploadProgress(0);
+
+        const uploadFormData = new FormData();
+        uploadFormData.append("video", videoFile);
+
+        const uploadRes = await fetch("/api/upload/video", {
+          method: "POST",
+          body: uploadFormData,
+        });
+
+        if (!uploadRes.ok) {
+          const errorData = await uploadRes.json();
+          throw new Error(errorData.error || "Erro ao fazer upload do vídeo");
+        }
+
+        const uploadData = await uploadRes.json();
+        videoUrl = uploadData.videoUrl;
+        videoFileName = uploadData.fileName;
+        setUploading(false);
+        setUploadProgress(100);
+      }
+
+      const lessonData = {
+        title: formData.get("title") as string,
+        content: content,
+        type: lessonType,
+        order: parseInt(formData.get("order") as string),
+        videoUrl,
+        videoFileName,
+      };
+
       const res = await fetch(`/api/modules/${moduleId}/lessons/${lessonId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -93,9 +129,10 @@ export default function EditarAulaPage({
       router.push(`/admin/conteudo/${courseId}/modulos/${moduleId}`);
     } catch (error) {
       console.error("Erro:", error);
-      setError("Erro ao atualizar aula. Tente novamente.");
+      setError(error instanceof Error ? error.message : "Erro ao atualizar aula. Tente novamente.");
     } finally {
       setSaving(false);
+      setUploading(false);
     }
   }
 
@@ -221,16 +258,62 @@ export default function EditarAulaPage({
               </Grid>
 
               <Box>
-                <TextField
-                  fullWidth
-                  label="URL do Vídeo (opcional)"
-                  name="videoUrl"
-                  type="url"
-                  defaultValue={lesson.videoUrl || ""}
-                  placeholder="https://youtube.com/watch?v=..."
-                />
+                <Typography variant="body2" fontWeight="medium" sx={{ mb: 1 }}>
+                  Vídeo da Aula
+                </Typography>
+                {lesson.videoUrl && !videoFile && (
+                  <Box sx={{ mb: 2, p: 2, bgcolor: "action.hover", borderRadius: 1 }}>
+                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                      Vídeo atual: {lesson.videoFileName || "vídeo.mp4"}
+                    </Typography>
+                    <video
+                      controls
+                      style={{ width: "100%", maxWidth: "400px", borderRadius: "8px" }}
+                      src={lesson.videoUrl}
+                    >
+                      Seu navegador não suporta a tag de vídeo.
+                    </video>
+                  </Box>
+                )}
+                <Button
+                  component="label"
+                  variant="outlined"
+                  startIcon={<CloudUploadIcon />}
+                  sx={{ mb: 1 }}
+                >
+                  {videoFile ? "Alterar Vídeo" : lesson.videoUrl ? "Substituir Vídeo" : "Fazer Upload do Vídeo"}
+                  <input
+                    type="file"
+                    hidden
+                    accept="video/mp4,video/webm,video/ogg,video/quicktime"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        setVideoFile(file);
+                      }
+                    }}
+                  />
+                </Button>
+                {videoFile && (
+                  <Box sx={{ mt: 1 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      Novo arquivo selecionado: {videoFile.name}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Tamanho: {(videoFile.size / (1024 * 1024)).toFixed(2)} MB
+                    </Typography>
+                  </Box>
+                )}
+                {uploading && (
+                  <Box sx={{ mt: 2 }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      Fazendo upload do vídeo...
+                    </Typography>
+                    <LinearProgress variant="determinate" value={uploadProgress} />
+                  </Box>
+                )}
                 <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: "block" }}>
-                  Link para vídeo do YouTube, Vimeo, etc.
+                  Formatos aceitos: MP4, WebM, OGG, MOV. Tamanho máximo: 500MB
                 </Typography>
               </Box>
 

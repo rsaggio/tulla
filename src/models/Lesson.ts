@@ -1,11 +1,11 @@
 import mongoose, { Document, Schema } from "mongoose";
 
 export interface ILesson extends Document {
-  _id: string;
   moduleId: mongoose.Types.ObjectId;
   title: string;
   content: string; // Markdown
-  videoUrl?: string;
+  videoUrl?: string; // URL do vídeo após upload
+  videoFileName?: string; // Nome original do arquivo
   order: number;
   type: "teoria" | "video" | "leitura" | "quiz" | "activity";
   duration?: number; // Duração estimada em minutos
@@ -31,6 +31,9 @@ const LessonSchema = new Schema<ILesson>(
       required: [true, "Conteúdo da aula é obrigatório"],
     },
     videoUrl: {
+      type: String,
+    },
+    videoFileName: {
       type: String,
     },
     order: {
