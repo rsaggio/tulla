@@ -2,13 +2,24 @@
 
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { FolderKanban, ExternalLink, CheckCircle2, Clock, XCircle, Lock } from "lucide-react";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Button from "@mui/material/Button";
+import TextField from "@mui/material/TextField";
+import Chip from "@mui/material/Chip";
+import Stack from "@mui/material/Stack";
+import CircularProgress from "@mui/material/CircularProgress";
+import Alert from "@mui/material/Alert";
+import Grid from "@mui/material/Grid";
+import Paper from "@mui/material/Paper";
+import FolderIcon from "@mui/icons-material/Folder";
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import CancelIcon from "@mui/icons-material/Cancel";
+import LockIcon from "@mui/icons-material/Lock";
 
 interface Project {
   _id: string;
@@ -38,6 +49,7 @@ interface Submission {
 
 export default function AlunoProjetosPage() {
   const searchParams = useSearchParams();
+  const moduleId = searchParams.get("module");
   const [projects, setProjects] = useState<Project[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
@@ -70,7 +82,12 @@ export default function AlunoProjetosPage() {
               }
             }
 
-            setProjects(allProjects);
+            // Filtrar por módulo se especificado
+            const filteredProjects = moduleId
+              ? allProjects.filter(p => p.moduleId === moduleId)
+              : allProjects;
+
+            setProjects(filteredProjects);
           }
         }
       }
@@ -86,6 +103,7 @@ export default function AlunoProjetosPage() {
       const res = await fetch("/api/submissions");
       if (res.ok) {
         const data = await res.json();
+        console.log("[DEBUG] Submissões carregadas:", data);
         setSubmissions(data);
       }
     } catch (error) {
@@ -134,244 +152,265 @@ export default function AlunoProjetosPage() {
     });
   }
 
-  function getStatusIcon(status: string) {
+  function getStatusConfig(status: string) {
     switch (status) {
       case "aprovado":
-        return <CheckCircle2 className="w-5 h-5 text-green-600" />;
+        return {
+          icon: <CheckCircleIcon sx={{ color: "success.main" }} />,
+          text: "Aprovado",
+          color: "success" as const,
+        };
       case "reprovado":
-        return <XCircle className="w-5 h-5 text-red-600" />;
+        return {
+          icon: <CancelIcon sx={{ color: "error.main" }} />,
+          text: "Reprovado",
+          color: "error" as const,
+        };
       case "em_revisao":
-        return <Clock className="w-5 h-5 text-blue-600" />;
+        return {
+          icon: <AccessTimeIcon sx={{ color: "info.main" }} />,
+          text: "Em Revisão",
+          color: "info" as const,
+        };
       default:
-        return <Clock className="w-5 h-5 text-yellow-600" />;
-    }
-  }
-
-  function getStatusText(status: string) {
-    switch (status) {
-      case "aprovado":
-        return "Aprovado";
-      case "reprovado":
-        return "Reprovado";
-      case "em_revisao":
-        return "Em Revisão";
-      default:
-        return "Pendente";
+        return {
+          icon: <AccessTimeIcon sx={{ color: "warning.main" }} />,
+          text: "Pendente",
+          color: "warning" as const,
+        };
     }
   }
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <p className="text-muted-foreground">Carregando projetos...</p>
-      </div>
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 400 }}>
+        <CircularProgress />
+      </Box>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Meus Projetos</h1>
-        <p className="text-muted-foreground mt-1">
+    <Stack spacing={3}>
+      <Box>
+        <Typography variant="h3" fontWeight="bold">
+          Meus Projetos
+        </Typography>
+        <Typography variant="body1" color="text.secondary" sx={{ mt: 0.5 }}>
           Submeta seus projetos e acompanhe o feedback dos instrutores
-        </p>
-      </div>
+        </Typography>
+      </Box>
 
       {selectedProject ? (
         <Card>
-          <CardHeader>
-            <CardTitle>Submeter Projeto: {selectedProject.title}</CardTitle>
-            <CardDescription>{selectedProject.description}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-4">
-                <div>
-                  <h3 className="font-medium mb-2">Requisitos:</h3>
-                  <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
+          <CardContent sx={{ p: 3 }}>
+            <Typography variant="h5" fontWeight="bold" gutterBottom>
+              Submeter Projeto: {selectedProject.title}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              {selectedProject.description}
+            </Typography>
+
+            <Box component="form" onSubmit={handleSubmit}>
+              <Stack spacing={3}>
+                <Box>
+                  <Typography variant="h6" fontWeight="medium" gutterBottom>
+                    Requisitos:
+                  </Typography>
+                  <Box component="ul" sx={{ pl: 3, m: 0 }}>
                     {selectedProject.requirements.map((req, i) => (
-                      <li key={i}>{req}</li>
+                      <Typography component="li" key={i} variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                        {req}
+                      </Typography>
                     ))}
-                  </ul>
-                </div>
+                  </Box>
+                </Box>
 
-                <div>
-                  <h3 className="font-medium mb-2">Entregáveis:</h3>
-                  <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
+                <Box>
+                  <Typography variant="h6" fontWeight="medium" gutterBottom>
+                    Entregáveis:
+                  </Typography>
+                  <Box component="ul" sx={{ pl: 3, m: 0 }}>
                     {selectedProject.deliverables.map((del, i) => (
-                      <li key={i}>{del}</li>
+                      <Typography component="li" key={i} variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                        {del}
+                      </Typography>
                     ))}
-                  </ul>
-                </div>
-              </div>
+                  </Box>
+                </Box>
 
-              <div className="space-y-2">
-                <Label htmlFor="githubUrl">URL do GitHub *</Label>
-                <Input
-                  id="githubUrl"
+                <TextField
+                  label="URL do GitHub"
                   type="url"
                   placeholder="https://github.com/seu-usuario/projeto"
                   value={githubUrl}
                   onChange={(e) => setGithubUrl(e.target.value)}
                   required
+                  fullWidth
                 />
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="notes">Notas (opcional)</Label>
-                <Textarea
-                  id="notes"
+                <TextField
+                  label="Notas (opcional)"
                   placeholder="Adicione qualquer informação adicional sobre seu projeto..."
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
+                  multiline
                   rows={4}
+                  fullWidth
                 />
-              </div>
 
-              <div className="flex gap-3">
-                <Button type="submit" disabled={submitting}>
-                  {submitting ? "Submetendo..." : "Submeter Projeto"}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setSelectedProject(null)}
-                >
-                  Cancelar
-                </Button>
-              </div>
-            </form>
+                <Box sx={{ display: "flex", gap: 2 }}>
+                  <Button type="submit" variant="contained" disabled={submitting}>
+                    {submitting ? "Submetendo..." : "Submeter Projeto"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outlined"
+                    onClick={() => setSelectedProject(null)}
+                  >
+                    Cancelar
+                  </Button>
+                </Box>
+              </Stack>
+            </Box>
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-6 md:grid-cols-2">
+        <Grid container spacing={3}>
           {projects.map((project) => {
             const submission = getProjectSubmission(project._id);
+            const statusConfig = submission ? getStatusConfig(submission.status) : null;
 
             return (
-              <Card key={project._id} className={project.isLocked ? "opacity-75" : ""}>
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <CardTitle className="flex items-center gap-2">
-                        {project.isLocked ? (
-                          <Lock className="w-5 h-5 text-muted-foreground" />
-                        ) : (
-                          <FolderKanban className="w-5 h-5" />
-                        )}
-                        {project.title}
-                      </CardTitle>
-                      <CardDescription className="mt-1">
-                        {project.description}
-                      </CardDescription>
-                    </div>
-                    <div className="flex flex-col items-end gap-1">
-                      <Badge variant="outline">{project.estimatedHours}h</Badge>
-                      {project.isLocked && (
-                        <Badge variant="secondary" className="text-xs">
-                          Bloqueado
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {project.isLocked ? (
-                    <div className="space-y-3">
-                      <div className="flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-950 rounded-lg border border-amber-200 dark:border-amber-800">
-                        <Lock className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
-                        <div className="space-y-1">
-                          <p className="text-sm font-medium text-amber-900 dark:text-amber-100">
-                            Projeto Bloqueado
-                          </p>
-                          <p className="text-sm text-amber-700 dark:text-amber-300">
-                            Complete todas as aulas do módulo <strong>{project.moduleName}</strong> para desbloquear este projeto.
-                          </p>
-                          <p className="text-sm text-amber-600 dark:text-amber-400 font-medium mt-2">
-                            Progresso: {project.completedLessons}/{project.totalLessons} aulas completadas
-                          </p>
-                        </div>
-                      </div>
-                      <Button
-                        className="w-full"
-                        disabled
-                        variant="secondary"
-                      >
-                        <Lock className="w-4 h-4 mr-2" />
-                        Projeto Bloqueado
-                      </Button>
-                    </div>
-                  ) : submission ? (
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2">
-                        {getStatusIcon(submission.status)}
-                        <span className="font-medium">
-                          {getStatusText(submission.status)}
-                        </span>
-                      </div>
-
-                      <a
-                        href={submission.githubUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 text-sm text-primary hover:underline"
-                      >
-                        <ExternalLink className="w-4 h-4" />
-                        Ver no GitHub
-                      </a>
-
-                      {submission.feedback && (
-                        <div className="p-3 bg-muted rounded-lg">
-                          <p className="text-sm font-medium mb-1">
-                            Feedback do Instrutor:
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            {submission.feedback}
-                          </p>
-                          {submission.grade !== undefined && (
-                            <p className="text-sm font-medium mt-2">
-                              Nota: {submission.grade}/100
-                            </p>
+              <Grid item xs={12} md={6} key={project._id}>
+                <Card sx={{ height: "100%", opacity: project.isLocked ? 0.75 : 1 }}>
+                  <CardContent>
+                    <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", mb: 2 }}>
+                      <Box sx={{ flex: 1 }}>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
+                          {project.isLocked ? (
+                            <LockIcon sx={{ color: "text.secondary" }} />
+                          ) : (
+                            <FolderIcon sx={{ color: "primary.main" }} />
                           )}
-                        </div>
-                      )}
+                          <Typography variant="h6" fontWeight="bold">
+                            {project.title}
+                          </Typography>
+                        </Box>
+                        <Typography variant="body2" color="text.secondary">
+                          {project.description}
+                        </Typography>
+                      </Box>
+                      <Stack spacing={0.5} alignItems="flex-end">
+                        <Chip label={`${project.estimatedHours}h`} size="small" />
+                        {project.isLocked && (
+                          <Chip label="Bloqueado" size="small" color="default" />
+                        )}
+                      </Stack>
+                    </Box>
 
-                      {submission.status === "reprovado" && (
+                    <Stack spacing={2}>
+                      {project.isLocked ? (
+                        <>
+                          <Alert severity="warning" icon={<LockIcon />}>
+                            <Typography variant="body2" fontWeight="medium" gutterBottom>
+                              Projeto Bloqueado
+                            </Typography>
+                            <Typography variant="body2">
+                              Complete todas as aulas do módulo <strong>{project.moduleName}</strong> para desbloquear este projeto.
+                            </Typography>
+                            <Typography variant="body2" fontWeight="medium" sx={{ mt: 1 }}>
+                              Progresso: {project.completedLessons}/{project.totalLessons} aulas completadas
+                            </Typography>
+                          </Alert>
+                          <Button
+                            fullWidth
+                            variant="outlined"
+                            disabled
+                            startIcon={<LockIcon />}
+                          >
+                            Projeto Bloqueado
+                          </Button>
+                        </>
+                      ) : submission ? (
+                        <>
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                            {statusConfig?.icon}
+                            <Typography variant="body1" fontWeight="medium">
+                              {statusConfig?.text}
+                            </Typography>
+                          </Box>
+
+                          <Button
+                            component="a"
+                            href={submission.githubUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            variant="text"
+                            startIcon={<OpenInNewIcon />}
+                            sx={{ justifyContent: "flex-start" }}
+                          >
+                            Ver no GitHub
+                          </Button>
+
+                          {submission.feedback && (
+                            <Paper sx={{ p: 2, bgcolor: "action.hover" }}>
+                              <Typography variant="body2" fontWeight="medium" gutterBottom>
+                                Feedback do Instrutor:
+                              </Typography>
+                              <Typography variant="body2" color="text.secondary">
+                                {submission.feedback}
+                              </Typography>
+                              {submission.grade !== undefined && submission.grade !== null && (
+                                <Typography variant="body2" fontWeight="medium" sx={{ mt: 1 }}>
+                                  Nota: {submission.grade}/100
+                                </Typography>
+                              )}
+                            </Paper>
+                          )}
+
+                          {submission.status === "reprovado" && (
+                            <Button
+                              fullWidth
+                              variant="outlined"
+                              onClick={() => setSelectedProject(project)}
+                            >
+                              Resubmeter Projeto
+                            </Button>
+                          )}
+                        </>
+                      ) : (
                         <Button
-                          variant="outline"
-                          className="w-full"
+                          fullWidth
+                          variant="contained"
                           onClick={() => setSelectedProject(project)}
                         >
-                          Resubmeter Projeto
+                          Submeter Projeto
                         </Button>
                       )}
-                    </div>
-                  ) : (
-                    <Button
-                      className="w-full"
-                      onClick={() => setSelectedProject(project)}
-                    >
-                      Submeter Projeto
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
+                    </Stack>
+                  </CardContent>
+                </Card>
+              </Grid>
             );
           })}
-        </div>
+        </Grid>
       )}
 
       {projects.length === 0 && (
         <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <FolderKanban className="w-12 h-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium mb-2">Nenhum projeto disponível</h3>
-            <p className="text-sm text-muted-foreground">
-              Complete as aulas para desbloquear os projetos
-            </p>
+          <CardContent>
+            <Stack spacing={2} alignItems="center" sx={{ py: 6 }}>
+              <FolderIcon sx={{ fontSize: 48, color: "text.secondary" }} />
+              <Typography variant="h6" fontWeight="medium">
+                Nenhum projeto disponível
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Complete as aulas para desbloquear os projetos
+              </Typography>
+            </Stack>
           </CardContent>
         </Card>
       )}
-    </div>
+    </Stack>
   );
 }

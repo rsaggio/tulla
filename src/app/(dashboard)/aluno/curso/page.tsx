@@ -2,16 +2,21 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { BookOpen, CheckCircle2, Circle, FolderKanban } from "lucide-react";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Stack from "@mui/material/Stack";
 import CircularProgress from "@mui/material/CircularProgress";
 import Paper from "@mui/material/Paper";
 import Divider from "@mui/material/Divider";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import CircleOutlinedIcon from "@mui/icons-material/CircleOutlined";
+import FolderIcon from "@mui/icons-material/Folder";
+import BookOpenIcon from "@mui/icons-material/MenuBook";
+import LockIcon from "@mui/icons-material/Lock";
 
 interface Module {
   _id: string;
@@ -94,7 +99,7 @@ export default function AlunoCursoPage() {
       <Card>
         <CardContent>
           <Stack spacing={2} alignItems="center" sx={{ py: 6 }}>
-            <BookOpen size={48} />
+            <BookOpenIcon sx={{ fontSize: 48, color: "text.secondary" }} />
             <Typography variant="h6">Nenhum curso disponível</Typography>
             <Typography variant="body2" color="text.secondary">
               Entre em contato com o suporte
@@ -142,23 +147,23 @@ export default function AlunoCursoPage() {
             const completedInModule = moduleLessons.filter((l) =>
               completedLessons.includes(l._id)
             ).length;
+            const isModuleComplete = completedInModule === moduleLessons.length && moduleLessons.length > 0;
 
             return (
               <Card key={module._id}>
-                <CardHeader>
-                  <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
-                    <Box>
-                      <CardTitle>
-                        Módulo {module.order}: {module.title}
-                      </CardTitle>
-                      <CardDescription sx={{ mt: 0.5 }}>
-                        {module.description}
-                      </CardDescription>
-                    </Box>
-                    <Badge label={module.estimatedHours + "h"} />
-                  </Box>
-                </CardHeader>
                 <CardContent>
+                  <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", mb: 2 }}>
+                    <Box>
+                      <Typography variant="h5" fontWeight="bold">
+                        Módulo {module.order}: {module.title}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                        {module.description}
+                      </Typography>
+                    </Box>
+                    <Chip label={module.estimatedHours + "h"} size="small" />
+                  </Box>
+
                   <Stack spacing={1}>
                     <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
                       <Typography variant="body2" color="text.secondary">Progresso do Módulo</Typography>
@@ -172,15 +177,36 @@ export default function AlunoCursoPage() {
 
                       return (
                         <Link key={lesson._id} href={"/aluno/aula/" + lesson._id} style={{ textDecoration: "none" }}>
-                          <Paper sx={{ p: 2, display: "flex", alignItems: "center", gap: 2, "&:hover": { bgcolor: "action.hover" }, cursor: "pointer" }}>
-                            {isCompleted ? <CheckCircle2 size={20} style={{ color: "green" }} /> : <Circle size={20} />}
+                          <Paper
+                            sx={{
+                              p: 2,
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 2,
+                              "&:hover": { bgcolor: "action.hover" },
+                              cursor: "pointer",
+                              transition: "all 0.2s"
+                            }}
+                          >
+                            {isCompleted ? (
+                              <CheckCircleIcon sx={{ color: "primary.main" }} />
+                            ) : (
+                              <CircleOutlinedIcon sx={{ color: "text.secondary" }} />
+                            )}
                             <Box sx={{ flex: 1 }}>
                               <Typography fontWeight={500}>{lesson.order}. {lesson.title}</Typography>
                               <Typography variant="body2" color="text.secondary">
-                                {lesson.type === "teoria" ? "Teoria" : lesson.type === "video" ? "Vídeo" : "Leitura"}
+                                {lesson.type === "teoria" ? "Teoria" :
+                                 lesson.type === "video" ? "Vídeo" :
+                                 lesson.type === "quiz" ? "Quiz" :
+                                 lesson.type === "activity" ? "Exercício Prático" :
+                                 "Leitura"}
                               </Typography>
                             </Box>
-                            <Button size="sm" variant={isCompleted ? "outline" : "default"}>
+                            <Button
+                              size="small"
+                              variant={isCompleted ? "outlined" : "contained"}
+                            >
                               {isCompleted ? "Revisar" : "Iniciar"}
                             </Button>
                           </Paper>
@@ -190,16 +216,65 @@ export default function AlunoCursoPage() {
 
                     <Divider sx={{ my: 2 }} />
 
-                    <Link href={"/aluno/projetos?module=" + module._id} style={{ textDecoration: "none" }}>
-                      <Paper sx={{ p: 2, display: "flex", alignItems: "center", gap: 2, bgcolor: "secondary.light", "&:hover": { opacity: 0.9 }, cursor: "pointer" }}>
-                        <FolderKanban size={20} />
+                    {isModuleComplete ? (
+                      <Link href={"/aluno/projetos?module=" + module._id} style={{ textDecoration: "none" }}>
+                        <Paper
+                          sx={{
+                            p: 2,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 2,
+                            bgcolor: "primary.main",
+                            color: "primary.contrastText",
+                            "&:hover": { bgcolor: "primary.dark" },
+                            cursor: "pointer",
+                            transition: "all 0.2s"
+                          }}
+                        >
+                          <FolderIcon />
+                          <Box sx={{ flex: 1 }}>
+                            <Typography fontWeight={500}>Projeto do Módulo</Typography>
+                            <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                              Complete o projeto para finalizar o módulo
+                            </Typography>
+                          </Box>
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            sx={{
+                              color: "inherit",
+                              borderColor: "currentColor",
+                              "&:hover": { borderColor: "currentColor", bgcolor: "rgba(255,255,255,0.1)" }
+                            }}
+                          >
+                            Ver Projeto
+                          </Button>
+                        </Paper>
+                      </Link>
+                    ) : (
+                      <Paper
+                        sx={{
+                          p: 2,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 2,
+                          bgcolor: "action.disabledBackground",
+                          cursor: "not-allowed",
+                          opacity: 0.7
+                        }}
+                      >
+                        <LockIcon sx={{ color: "text.secondary" }} />
                         <Box sx={{ flex: 1 }}>
-                          <Typography fontWeight={500}>Projeto do Módulo</Typography>
-                          <Typography variant="body2" color="text.secondary">Complete todas as aulas para acessar</Typography>
+                          <Typography fontWeight={500} color="text.secondary">
+                            Projeto do Módulo
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            Complete todas as aulas para desbloquear
+                          </Typography>
                         </Box>
-                        <Button size="sm" variant="secondary">Ver Projeto</Button>
+                        <Chip label="Bloqueado" size="small" />
                       </Paper>
-                    </Link>
+                    )}
                   </Stack>
                 </CardContent>
               </Card>

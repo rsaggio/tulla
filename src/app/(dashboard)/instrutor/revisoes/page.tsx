@@ -1,13 +1,26 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { ClipboardList, ExternalLink, CheckCircle2, XCircle, Clock } from "lucide-react";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Button from "@mui/material/Button";
+import TextField from "@mui/material/TextField";
+import Chip from "@mui/material/Chip";
+import Stack from "@mui/material/Stack";
+import Grid from "@mui/material/Grid";
+import Paper from "@mui/material/Paper";
+import CircularProgress from "@mui/material/CircularProgress";
+import Divider from "@mui/material/Divider";
+import Link from "@mui/material/Link";
+import ToggleButton from "@mui/material/ToggleButton";
+import ToggleButtonGroup from "@mui/material/ToggleButtonGroup";
+import AssignmentIcon from "@mui/icons-material/Assignment";
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import CancelIcon from "@mui/icons-material/Cancel";
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -114,213 +127,238 @@ export default function InstrutorRevisoesPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <p className="text-muted-foreground">Carregando submissões...</p>
-      </div>
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 400 }}>
+        <CircularProgress />
+      </Box>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Fila de Revisões</h1>
-        <p className="text-muted-foreground mt-1">
+    <Stack spacing={3}>
+      <Box>
+        <Typography variant="h3" fontWeight="bold">
+          Fila de Revisões
+        </Typography>
+        <Typography variant="body1" color="text.secondary" sx={{ mt: 0.5 }}>
           Revise os projetos submetidos pelos alunos
-        </p>
-      </div>
+        </Typography>
+      </Box>
 
-      <div className="grid gap-6 md:grid-cols-3">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ClipboardList className="w-5 h-5" />
-              Pendentes
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">
-              {submissions.filter((s) => s.status === "pendente").length}
-            </div>
-          </CardContent>
-        </Card>
+      <Grid container spacing={3}>
+        <Grid item xs={12} md={4}>
+          <Card>
+            <CardContent>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                <AssignmentIcon sx={{ color: "primary.main" }} />
+                <Typography variant="h6" fontWeight="medium">
+                  Pendentes
+                </Typography>
+              </Box>
+              <Typography variant="h3" fontWeight="bold">
+                {submissions.filter((s) => s.status === "pendente").length}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="w-5 h-5" />
-              Em Revisão
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">
-              {submissions.filter((s) => s.status === "em_revisao").length}
-            </div>
-          </CardContent>
-        </Card>
+        <Grid item xs={12} md={4}>
+          <Card>
+            <CardContent>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                <AccessTimeIcon sx={{ color: "primary.main" }} />
+                <Typography variant="h6" fontWeight="medium">
+                  Em Revisão
+                </Typography>
+              </Box>
+              <Typography variant="h3" fontWeight="bold">
+                {submissions.filter((s) => s.status === "em_revisao").length}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CheckCircle2 className="w-5 h-5" />
-              Total na Fila
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{submissions.length}</div>
-          </CardContent>
-        </Card>
-      </div>
+        <Grid item xs={12} md={4}>
+          <Card>
+            <CardContent>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                <CheckCircleIcon sx={{ color: "primary.main" }} />
+                <Typography variant="h6" fontWeight="medium">
+                  Total na Fila
+                </Typography>
+              </Box>
+              <Typography variant="h3" fontWeight="bold">
+                {submissions.length}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
 
       {submissions.length === 0 ? (
         <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <ClipboardList className="w-12 h-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium mb-2">Nenhuma submissão pendente</h3>
-            <p className="text-sm text-muted-foreground">
-              Todas as submissões foram revisadas!
-            </p>
+          <CardContent>
+            <Stack spacing={2} alignItems="center" sx={{ py: 6 }}>
+              <AssignmentIcon sx={{ fontSize: 48, color: "text.secondary" }} />
+              <Typography variant="h6" fontWeight="medium">
+                Nenhuma submissão pendente
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Todas as submissões foram revisadas!
+              </Typography>
+            </Stack>
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-4">
+        <Stack spacing={3}>
           {submissions.map((submission) => (
             <Card key={submission._id}>
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <CardTitle className="flex items-center gap-2">
-                      {submission.projectId.title}
-                      <Badge variant={submission.status === "pendente" ? "secondary" : "outline"}>
-                        {submission.status === "pendente" ? "Pendente" : "Em Revisão"}
-                      </Badge>
-                    </CardTitle>
-                    <CardDescription className="mt-1">
+              <CardContent>
+                <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", mb: 2 }}>
+                  <Box sx={{ flex: 1 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
+                      <Typography variant="h6" fontWeight="bold">
+                        {submission.projectId.title}
+                      </Typography>
+                      <Chip
+                        label={submission.status === "pendente" ? "Pendente" : "Em Revisão"}
+                        color={submission.status === "pendente" ? "warning" : "info"}
+                        size="small"
+                      />
+                    </Box>
+                    <Typography variant="body2" color="text.secondary">
                       {submission.projectId.description}
-                    </CardDescription>
-                  </div>
-                  <Badge variant="outline">
-                    {submission.projectId.estimatedHours}h
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div>
-                    <h4 className="text-sm font-medium mb-1">Aluno</h4>
-                    <p className="text-sm">{submission.studentId.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {submission.studentId.email}
-                    </p>
-                  </div>
+                    </Typography>
+                  </Box>
+                  <Chip label={`${submission.projectId.estimatedHours}h`} size="small" variant="outlined" />
+                </Box>
 
-                  <div>
-                    <h4 className="text-sm font-medium mb-1">Submetido</h4>
-                    <p className="text-sm">
+                <Grid container spacing={3} sx={{ mb: 2 }}>
+                  <Grid item xs={12} md={6}>
+                    <Typography variant="body2" fontWeight="medium" gutterBottom>
+                      Aluno
+                    </Typography>
+                    <Typography variant="body2">{submission.studentId.name}</Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {submission.studentId.email}
+                    </Typography>
+                  </Grid>
+
+                  <Grid item xs={12} md={6}>
+                    <Typography variant="body2" fontWeight="medium" gutterBottom>
+                      Submetido
+                    </Typography>
+                    <Typography variant="body2">
                       {formatDistanceToNow(new Date(submission.submittedAt), {
                         addSuffix: true,
                         locale: ptBR,
                       })}
-                    </p>
-                  </div>
-                </div>
+                    </Typography>
+                  </Grid>
+                </Grid>
 
-                <div>
-                  <h4 className="text-sm font-medium mb-2">Repositório</h4>
-                  <a
+                <Box sx={{ mb: 2 }}>
+                  <Typography variant="body2" fontWeight="medium" gutterBottom>
+                    Repositório
+                  </Typography>
+                  <Link
                     href={submission.githubUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-sm text-primary hover:underline"
+                    sx={{ display: "flex", alignItems: "center", gap: 1 }}
                   >
-                    <ExternalLink className="w-4 h-4" />
+                    <OpenInNewIcon sx={{ fontSize: 16 }} />
                     {submission.githubUrl}
-                  </a>
-                </div>
+                  </Link>
+                </Box>
 
                 {submission.notes && (
-                  <div>
-                    <h4 className="text-sm font-medium mb-2">Notas do Aluno</h4>
-                    <p className="text-sm text-muted-foreground p-3 bg-muted rounded-lg">
-                      {submission.notes}
-                    </p>
-                  </div>
+                  <Box sx={{ mb: 2 }}>
+                    <Typography variant="body2" fontWeight="medium" gutterBottom>
+                      Notas do Aluno
+                    </Typography>
+                    <Paper sx={{ p: 2, bgcolor: "action.hover" }}>
+                      <Typography variant="body2" color="text.secondary">
+                        {submission.notes}
+                      </Typography>
+                    </Paper>
+                  </Box>
                 )}
 
                 {reviewing === submission._id ? (
-                  <div className="space-y-4 pt-4 border-t">
-                    <div className="space-y-2">
-                      <Label>Status da Revisão</Label>
-                      <div className="flex gap-3">
-                        <Button
-                          variant={reviewStatus === "aprovado" ? "default" : "outline"}
-                          className="flex-1"
-                          onClick={() => {
-                            setReviewStatus("aprovado");
-                            setGrade(100);
+                  <>
+                    <Divider sx={{ my: 3 }} />
+                    <Stack spacing={3}>
+                      <Box>
+                        <Typography variant="body2" fontWeight="medium" gutterBottom>
+                          Status da Revisão
+                        </Typography>
+                        <ToggleButtonGroup
+                          value={reviewStatus}
+                          exclusive
+                          onChange={(e, value) => {
+                            if (value !== null) {
+                              setReviewStatus(value);
+                              setGrade(value === "aprovado" ? 100 : 0);
+                            }
                           }}
+                          fullWidth
                         >
-                          <CheckCircle2 className="w-4 h-4 mr-2" />
-                          Aprovar
-                        </Button>
-                        <Button
-                          variant={reviewStatus === "reprovado" ? "destructive" : "outline"}
-                          className="flex-1"
-                          onClick={() => {
-                            setReviewStatus("reprovado");
-                            setGrade(0);
-                          }}
-                        >
-                          <XCircle className="w-4 h-4 mr-2" />
-                          Reprovar
-                        </Button>
-                      </div>
-                    </div>
+                          <ToggleButton value="aprovado" color="success">
+                            <CheckCircleIcon sx={{ mr: 1 }} />
+                            Aprovar
+                          </ToggleButton>
+                          <ToggleButton value="reprovado" color="error">
+                            <CancelIcon sx={{ mr: 1 }} />
+                            Reprovar
+                          </ToggleButton>
+                        </ToggleButtonGroup>
+                      </Box>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="grade">Nota (0-100)</Label>
-                      <Input
-                        id="grade"
+                      <TextField
+                        label="Nota (0-100)"
                         type="number"
-                        min="0"
-                        max="100"
+                        inputProps={{ min: 0, max: 100 }}
                         value={grade}
                         onChange={(e) => setGrade(Number(e.target.value))}
+                        fullWidth
                       />
-                    </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="feedback">Feedback *</Label>
-                      <Textarea
-                        id="feedback"
+                      <TextField
+                        label="Feedback"
                         placeholder="Forneça um feedback detalhado sobre o projeto do aluno..."
                         value={feedback}
                         onChange={(e) => setFeedback(e.target.value)}
+                        multiline
                         rows={6}
                         required
+                        fullWidth
                       />
-                    </div>
 
-                    <div className="flex gap-3">
-                      <Button
-                        onClick={() => handleReview(submission._id)}
-                        disabled={submitting}
-                        className="flex-1"
-                      >
-                        {submitting ? "Enviando..." : "Enviar Revisão"}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={cancelReview}
-                        disabled={submitting}
-                      >
-                        Cancelar
-                      </Button>
-                    </div>
-                  </div>
+                      <Box sx={{ display: "flex", gap: 2 }}>
+                        <Button
+                          variant="contained"
+                          onClick={() => handleReview(submission._id)}
+                          disabled={submitting}
+                          sx={{ flex: 1 }}
+                        >
+                          {submitting ? "Enviando..." : "Enviar Revisão"}
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          onClick={cancelReview}
+                          disabled={submitting}
+                        >
+                          Cancelar
+                        </Button>
+                      </Box>
+                    </Stack>
+                  </>
                 ) : (
                   <Button
+                    variant="contained"
                     onClick={() => startReview(submission._id)}
-                    className="w-full"
+                    fullWidth
+                    sx={{ mt: 2 }}
                   >
                     Iniciar Revisão
                   </Button>
@@ -328,8 +366,8 @@ export default function InstrutorRevisoesPage() {
               </CardContent>
             </Card>
           ))}
-        </div>
+        </Stack>
       )}
-    </div>
+    </Stack>
   );
 }

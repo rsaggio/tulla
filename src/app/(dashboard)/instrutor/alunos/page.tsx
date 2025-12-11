@@ -1,10 +1,21 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Users, Search, TrendingUp, Clock } from "lucide-react";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import TextField from "@mui/material/TextField";
+import Chip from "@mui/material/Chip";
+import Stack from "@mui/material/Stack";
+import Grid from "@mui/material/Grid";
+import Paper from "@mui/material/Paper";
+import CircularProgress from "@mui/material/CircularProgress";
+import InputAdornment from "@mui/material/InputAdornment";
+import PeopleIcon from "@mui/icons-material/People";
+import SearchIcon from "@mui/icons-material/Search";
+import TrendingUpIcon from "@mui/icons-material/TrendingUp";
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -62,121 +73,133 @@ export default function InstrutorAlunosPage() {
 
   function getActivityStatus(lastActivity: string | null, createdAt: string) {
     if (!lastActivity) {
-      return { color: "bg-gray-500", text: "Nunca acessou" };
+      return { color: "default" as const, text: "Nunca acessou" };
     }
 
     const daysSince = Math.floor(
       (new Date().getTime() - new Date(lastActivity).getTime()) / (1000 * 60 * 60 * 24)
     );
 
-    if (daysSince === 0) return { color: "bg-green-500", text: "Ativo hoje" };
-    if (daysSince <= 3) return { color: "bg-green-500", text: "Ativo" };
-    if (daysSince <= 7) return { color: "bg-yellow-500", text: "Moderado" };
-    return { color: "bg-red-500", text: "Em risco" };
+    if (daysSince === 0) return { color: "success" as const, text: "Ativo hoje" };
+    if (daysSince <= 3) return { color: "success" as const, text: "Ativo" };
+    if (daysSince <= 7) return { color: "warning" as const, text: "Moderado" };
+    return { color: "error" as const, text: "Em risco" };
   }
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <p className="text-muted-foreground">Carregando alunos...</p>
-      </div>
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 400 }}>
+        <CircularProgress />
+      </Box>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Alunos</h1>
-        <p className="text-muted-foreground mt-1">
+    <Stack spacing={3}>
+      <Box>
+        <Typography variant="h3" fontWeight="bold">
+          Alunos
+        </Typography>
+        <Typography variant="body1" color="text.secondary" sx={{ mt: 0.5 }}>
           Acompanhe o progresso e atividade de todos os alunos
-        </p>
-      </div>
+        </Typography>
+      </Box>
 
-      <div className="grid gap-6 md:grid-cols-3">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="w-5 h-5" />
-              Total de Alunos
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">{students.length}</div>
-          </CardContent>
-        </Card>
+      <Grid container spacing={3}>
+        <Grid item xs={12} md={4}>
+          <Card>
+            <CardContent>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                <PeopleIcon sx={{ color: "primary.main" }} />
+                <Typography variant="h6" fontWeight="medium">
+                  Total de Alunos
+                </Typography>
+              </Box>
+              <Typography variant="h3" fontWeight="bold">
+                {students.length}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="w-5 h-5" />
-              Progresso Médio
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">
-              {students.length > 0
-                ? Math.round(
-                    students.reduce((acc, s) => acc + s.progress.overallProgress, 0) /
-                      students.length
-                  )
-                : 0}
-              %
-            </div>
-          </CardContent>
-        </Card>
+        <Grid item xs={12} md={4}>
+          <Card>
+            <CardContent>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                <TrendingUpIcon sx={{ color: "primary.main" }} />
+                <Typography variant="h6" fontWeight="medium">
+                  Progresso Médio
+                </Typography>
+              </Box>
+              <Typography variant="h3" fontWeight="bold">
+                {students.length > 0
+                  ? Math.round(
+                      students.reduce((acc, s) => acc + s.progress.overallProgress, 0) /
+                        students.length
+                    )
+                  : 0}
+                %
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="w-5 h-5" />
-              Alunos Ativos
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold">
-              {
-                students.filter((s) => {
-                  if (!s.progress.lastActivityAt) return false;
-                  const daysSince = Math.floor(
-                    (new Date().getTime() -
-                      new Date(s.progress.lastActivityAt).getTime()) /
-                      (1000 * 60 * 60 * 24)
-                  );
-                  return daysSince <= 7;
-                }).length
-              }
-            </div>
-            <p className="text-sm text-muted-foreground mt-1">
-              Ativos nos últimos 7 dias
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+        <Grid item xs={12} md={4}>
+          <Card>
+            <CardContent>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                <AccessTimeIcon sx={{ color: "primary.main" }} />
+                <Typography variant="h6" fontWeight="medium">
+                  Alunos Ativos
+                </Typography>
+              </Box>
+              <Typography variant="h3" fontWeight="bold">
+                {
+                  students.filter((s) => {
+                    if (!s.progress.lastActivityAt) return false;
+                    const daysSince = Math.floor(
+                      (new Date().getTime() -
+                        new Date(s.progress.lastActivityAt).getTime()) /
+                        (1000 * 60 * 60 * 24)
+                    );
+                    return daysSince <= 7;
+                  }).length
+                }
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                Ativos nos últimos 7 dias
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
 
       <Card>
-        <CardHeader>
-          <div className="flex items-center gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar aluno por nome ou email..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-          </div>
-        </CardHeader>
         <CardContent>
+          <TextField
+            fullWidth
+            placeholder="Buscar aluno por nome ou email..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon />
+                </InputAdornment>
+              ),
+            }}
+            sx={{ mb: 3 }}
+          />
+
           {filteredStudents.length === 0 ? (
-            <div className="text-center py-12">
-              <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">
+            <Box sx={{ textAlign: "center", py: 12 }}>
+              <PeopleIcon sx={{ fontSize: 48, color: "text.secondary", mb: 2 }} />
+              <Typography variant="body1" color="text.secondary">
                 {search ? "Nenhum aluno encontrado" : "Nenhum aluno cadastrado"}
-              </p>
-            </div>
+              </Typography>
+            </Box>
           ) : (
-            <div className="space-y-4">
+            <Stack spacing={2}>
               {filteredStudents.map((student) => {
                 const activityStatus = getActivityStatus(
                   student.progress.lastActivityAt,
@@ -184,56 +207,65 @@ export default function InstrutorAlunosPage() {
                 );
 
                 return (
-                  <div
+                  <Paper
                     key={student._id}
-                    className="flex items-center gap-4 p-4 rounded-lg border hover:bg-muted/50 transition-colors"
+                    sx={{
+                      p: 2,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 2,
+                      "&:hover": { bgcolor: "action.hover" },
+                      transition: "all 0.2s",
+                    }}
+                    variant="outlined"
                   >
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-medium truncate">{student.name}</h3>
-                        <div className="flex items-center gap-1.5">
-                          <div
-                            className={`w-2 h-2 rounded-full ${activityStatus.color}`}
-                          />
-                          <span className="text-xs text-muted-foreground">
-                            {activityStatus.text}
-                          </span>
-                        </div>
-                      </div>
-                      <p className="text-sm text-muted-foreground truncate">
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
+                        <Typography fontWeight="medium" noWrap>
+                          {student.name}
+                        </Typography>
+                        <Chip
+                          label={activityStatus.text}
+                          color={activityStatus.color}
+                          size="small"
+                        />
+                      </Box>
+                      <Typography variant="body2" color="text.secondary" noWrap>
                         {student.email}
-                      </p>
-                    </div>
+                      </Typography>
+                    </Box>
 
-                    <div className="text-right space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground">
+                    <Box sx={{ textAlign: "right" }}>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
+                        <Typography variant="body2" color="text.secondary">
                           Progresso:
-                        </span>
-                        <Badge variant="outline">
-                          {student.progress.overallProgress}%
-                        </Badge>
-                      </div>
-                      <p className="text-xs text-muted-foreground">
+                        </Typography>
+                        <Chip
+                          label={`${student.progress.overallProgress}%`}
+                          size="small"
+                          variant="outlined"
+                        />
+                      </Box>
+                      <Typography variant="caption" color="text.secondary" display="block">
                         {student.progress.completedLessons.length} aulas concluídas
-                      </p>
+                      </Typography>
                       {student.progress.lastActivityAt && (
-                        <p className="text-xs text-muted-foreground">
+                        <Typography variant="caption" color="text.secondary" display="block">
                           Último acesso:{" "}
                           {formatDistanceToNow(
                             new Date(student.progress.lastActivityAt),
                             { addSuffix: true, locale: ptBR }
                           )}
-                        </p>
+                        </Typography>
                       )}
-                    </div>
-                  </div>
+                    </Box>
+                  </Paper>
                 );
               })}
-            </div>
+            </Stack>
           )}
         </CardContent>
       </Card>
-    </div>
+    </Stack>
   );
 }

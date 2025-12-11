@@ -8,17 +8,26 @@ import {
   Button,
   CircularProgress,
   Alert,
+  Typography,
 } from "@mui/material";
 import {
   ArrowBack,
   ArrowForward,
   CheckCircle,
 } from "@mui/icons-material";
+import ReactMarkdown from "react-markdown";
 import CourseSidebar from "@/components/course/CourseSidebar";
 import VideoLesson from "@/components/course/VideoLesson";
 import TextLesson from "@/components/course/TextLesson";
 import QuizLesson from "@/components/course/QuizLesson";
 import ActivityLesson from "@/components/course/ActivityLesson";
+
+interface QuizQuestion {
+  question: string;
+  options: string[];
+  correctAnswer: number;
+  explanation?: string;
+}
 
 interface Lesson {
   _id: string;
@@ -26,6 +35,10 @@ interface Lesson {
   type: "teoria" | "video" | "leitura" | "quiz" | "activity";
   duration?: number;
   order: number;
+  content?: string;
+  videoUrl?: string;
+  quiz?: QuizQuestion[];
+  resources?: { title: string; url: string }[];
 }
 
 interface Module {
@@ -119,18 +132,26 @@ export default function LessonPage() {
 
   const handleMarkComplete = async () => {
     try {
+      console.log("[DEBUG] Marcando aula como completa:", lessonId);
+
       const res = await fetch("/api/lessons/" + lessonId + "/complete", {
         method: "POST",
       });
 
       if (!res.ok) {
-        throw new Error("Erro ao marcar aula como completa");
+        const errorData = await res.json();
+        console.error("[ERROR] Erro ao marcar aula como completa:", errorData);
+        throw new Error(errorData.error || "Erro ao marcar aula como completa");
       }
+
+      const data = await res.json();
+      console.log("[DEBUG] Aula marcada como completa:", data);
 
       setIsCompleted(true);
       setCompletedLessons((prev) => [...prev, lessonId]);
       alert("Aula marcada como completa!");
     } catch (err: any) {
+      console.error("[ERROR] Erro ao marcar aula:", err);
       alert(err.message);
     }
   };
@@ -141,24 +162,39 @@ export default function LessonPage() {
     passed: boolean
   ) => {
     try {
-      const res = await fetch("/api/quiz/" + quiz._id + "/submit", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ answers, score, passed }),
-      });
-
-      if (!res.ok) {
-        throw new Error("Erro ao enviar quiz");
+      // Se for quiz embutido na aula (novo formato), apenas marcar como completo se passou
+      if (!quiz && lesson?.quiz) {
+        if (passed) {
+          await handleMarkComplete();
+        }
+        return;
       }
 
-      if (passed) {
-        setIsCompleted(true);
-        setCompletedLessons((prev) => [...prev, lessonId]);
+      // Quiz antigo (separado) - enviar para API específica
+      if (quiz?._id) {
+        const res = await fetch("/api/quiz/" + quiz._id + "/submit", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ answers, score, passed }),
+        });
+
+        if (!res.ok) {
+          throw new Error("Erro ao enviar quiz");
+        }
+
+        if (passed) {
+          setIsCompleted(true);
+          setCompletedLessons((prev) => [...prev, lessonId]);
+        }
       }
     } catch (err: any) {
-      throw err;
+      console.error("Erro ao enviar quiz:", err);
+      // Não propagar o erro para quizzes embutidos - os resultados já foram mostrados
+      if (quiz?._id) {
+        throw err;
+      }
     }
   };
 
@@ -314,26 +350,74 @@ export default function LessonPage() {
             />
           )}
 
-          {lesson.type === "quiz" && quiz && (
-            <QuizLesson
-              quiz={quiz}
-              onSubmit={handleQuizSubmit}
-              previousSubmission={quizSubmission}
-            />
+          {lesson.type === "quiz" && (
+            quiz ? (
+              <QuizLesson
+                quiz={quiz}
+                onSubmit={handleQuizSubmit}
+                previousSubmission={quizSubmission}
+              />
+            ) : lesson.quiz && lesson.quiz.length > 0 ? (
+              <Box>
+                <Typography variant="h4" fontWeight="bold" gutterBottom>
+                  {lesson.title}
+                </Typography>
+                {lesson.content && lesson.content.trim() && (
+                  <Box sx={{ mb: 4 }}>
+                    <ReactMarkdown>{lesson.content}</ReactMarkdown>
+                  </Box>
+                )}
+                <QuizLesson
+                  quiz={{
+                    _id: lesson._id,
+                    title: lesson.title,
+                    questions: lesson.quiz.map((q: any) => ({
+                      question: q.question,
+                      options: q.options,
+                      correctAnswer: q.correctAnswer,
+                      explanation: q.explanation,
+                    })),
+                    passingScore: 70,
+                    timeLimit: lesson.duration,
+                  }}
+                  onSubmit={handleQuizSubmit}
+                  previousSubmission={quizSubmission}
+                />
+              </Box>
+            ) : (
+              <TextLesson
+                title={lesson.title}
+                content={lesson.content}
+                type={lesson.type}
+                duration={lesson.duration}
+                resources={lesson.resources}
+              />
+            )
           )}
 
-          {lesson.type === "activity" && activity && (
-            <ActivityLesson
-              activity={activity}
-              onSubmit={handleActivitySubmit}
-              previousSubmission={activitySubmission}
-            />
+          {lesson.type === "activity" && (
+            activity ? (
+              <ActivityLesson
+                activity={activity}
+                onSubmit={handleActivitySubmit}
+                previousSubmission={activitySubmission}
+              />
+            ) : (
+              <TextLesson
+                title={lesson.title}
+                content={lesson.content}
+                type={lesson.type}
+                duration={lesson.duration}
+                resources={lesson.resources}
+              />
+            )
           )}
 
           {/* Mark as Complete Button */}
           {(lesson.type === "video" ||
             lesson.type === "teoria" ||
-            lesson.type === "leitura") &&
+            lesson.type === "leitura" ||
+            (lesson.type === "activity" && !activity)) &&
             !isCompleted && (
               <Box sx={{ mt: 4, display: "flex", justifyContent: "center" }}>
                 <Button

@@ -105,13 +105,22 @@ export default function AulaPage({ params }: { params: Promise<{ id: string }> }
 
     setCompleting(true);
     try {
+      console.log("[DEBUG] Marcando aula como concluída:", id);
+
       // Buscar o curso
       const coursesRes = await fetch("/api/courses");
-      if (!coursesRes.ok) throw new Error("Erro ao buscar curso");
+      if (!coursesRes.ok) {
+        const errorData = await coursesRes.json();
+        console.error("[ERROR] Erro ao buscar curso:", errorData);
+        throw new Error(errorData.error || "Erro ao buscar curso");
+      }
 
       const courses = await coursesRes.json();
+      console.log("[DEBUG] Cursos encontrados:", courses);
+
       if (courses.length === 0) throw new Error("Nenhum curso encontrado");
 
+      console.log("[DEBUG] Enviando requisição para marcar como concluída");
       const res = await fetch("/api/progress/complete-lesson", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -121,13 +130,21 @@ export default function AulaPage({ params }: { params: Promise<{ id: string }> }
         }),
       });
 
-      if (res.ok) {
-        setIsCompleted(true);
-        router.push("/aluno/curso");
+      if (!res.ok) {
+        const errorData = await res.json();
+        console.error("[ERROR] Erro ao marcar como concluída:", errorData);
+        throw new Error(errorData.error || "Erro ao marcar aula como concluída");
       }
+
+      const data = await res.json();
+      console.log("[DEBUG] Aula marcada como concluída:", data);
+
+      setIsCompleted(true);
+      alert("Aula marcada como concluída!");
+      router.push("/aluno/curso");
     } catch (error) {
-      console.error("Erro ao marcar como concluída:", error);
-      alert("Erro ao marcar aula como concluída");
+      console.error("[ERROR] Erro ao marcar como concluída:", error);
+      alert(error instanceof Error ? error.message : "Erro ao marcar aula como concluída");
     } finally {
       setCompleting(false);
     }
@@ -285,7 +302,16 @@ export default function AulaPage({ params }: { params: Promise<{ id: string }> }
             color={isCompleted ? "success" : "default"}
             variant={isCompleted ? "filled" : "outlined"}
           />
-          <Chip label={lesson.type} variant="outlined" />
+          <Chip
+            label={
+              lesson.type === "teoria" ? "Teoria" :
+              lesson.type === "video" ? "Vídeo" :
+              lesson.type === "quiz" ? "Quiz" :
+              lesson.type === "activity" ? "Exercício Prático" :
+              lesson.type
+            }
+            variant="outlined"
+          />
         </Box>
       </Box>
 
@@ -317,11 +343,13 @@ export default function AulaPage({ params }: { params: Promise<{ id: string }> }
             </Box>
           )}
 
-          <Box sx={{ my: 4 }}>
-            <ReactMarkdown components={markdownComponents}>
-              {lesson.content}
-            </ReactMarkdown>
-          </Box>
+          {lesson.content && lesson.content.trim() && (
+            <Box sx={{ my: 4 }}>
+              <ReactMarkdown components={markdownComponents}>
+                {lesson.content}
+              </ReactMarkdown>
+            </Box>
+          )}
 
           {lesson.quiz && lesson.quiz.length > 0 && (
             <Box sx={{ my: 4 }}>
@@ -334,8 +362,14 @@ export default function AulaPage({ params }: { params: Promise<{ id: string }> }
               </Typography>
               <QuizView
                 questions={lesson.quiz}
-                onComplete={(score, total) => {
-                  console.log(`Quiz completado: ${score}/${total}`);
+                onComplete={async (score, total) => {
+                  const percentage = Math.round((score / total) * 100);
+                  console.log(`Quiz completado: ${score}/${total} (${percentage}%)`);
+
+                  // Marcar como completo se passar (70% ou mais)
+                  if (percentage >= 70 && !isCompleted) {
+                    await markAsComplete();
+                  }
                 }}
               />
             </Box>

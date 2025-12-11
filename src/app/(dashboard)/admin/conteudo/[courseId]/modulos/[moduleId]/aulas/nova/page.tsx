@@ -43,6 +43,13 @@ export default function NovaAulaPage({
     const formData = new FormData(e.currentTarget);
     const lessonType = formData.get("type") as string;
 
+    // Validar quiz
+    if (lessonType === "quiz" && quizQuestions.length === 0) {
+      setError("Adicione pelo menos uma pergunta ao quiz");
+      setLoading(false);
+      return;
+    }
+
     console.log("=== FRONTEND: Criando aula ===");
     console.log("Tipo da aula:", lessonType);
     console.log("Arquivo de vídeo selecionado:", videoFile ? videoFile.name : "nenhum");
@@ -244,9 +251,9 @@ export default function NovaAulaPage({
               <MarkdownEditor
                 value={content}
                 onChange={setContent}
-                label="Conteúdo (Markdown)"
+                label={lessonType === "quiz" ? "Conteúdo Introdutório (Markdown - Opcional)" : "Conteúdo (Markdown)"}
                 placeholder="# Título da Seção&#10;&#10;Escreva o conteúdo da aula em Markdown...&#10;&#10;```javascript&#10;const exemplo = 'código';&#10;```"
-                required
+                required={lessonType !== "quiz"}
                 rows={20}
                 name="content"
               />

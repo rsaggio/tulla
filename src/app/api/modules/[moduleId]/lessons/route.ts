@@ -48,6 +48,14 @@ export async function POST(
 
     const body = await request.json();
 
+    // Validar quiz
+    if (body.type === "quiz" && (!body.quiz || body.quiz.length === 0)) {
+      return NextResponse.json(
+        { error: "Quiz deve ter pelo menos uma pergunta" },
+        { status: 400 }
+      );
+    }
+
     // Criar aula
     const lesson = await Lesson.create({
       ...body,

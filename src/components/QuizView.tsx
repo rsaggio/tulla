@@ -24,7 +24,7 @@ export interface QuizQuestion {
 
 interface QuizViewProps {
   questions: QuizQuestion[];
-  onComplete?: (score: number, total: number) => void;
+  onComplete?: (score: number, total: number) => void | Promise<void>;
 }
 
 export default function QuizView({ questions, onComplete }: QuizViewProps) {
@@ -53,7 +53,7 @@ export default function QuizView({ questions, onComplete }: QuizViewProps) {
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setSubmitted(true);
     setShowResults(true);
 
@@ -62,7 +62,12 @@ export default function QuizView({ questions, onComplete }: QuizViewProps) {
     ).length;
 
     if (onComplete) {
-      onComplete(correctCount, questions.length);
+      try {
+        await onComplete(correctCount, questions.length);
+      } catch (error) {
+        console.error("Erro ao processar resultado do quiz:", error);
+        // Continua mostrando os resultados mesmo se houver erro
+      }
     }
   };
 

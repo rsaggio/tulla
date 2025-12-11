@@ -36,7 +36,7 @@ const LessonSchema = new Schema<ILesson>(
     },
     content: {
       type: String,
-      required: [true, "Conteúdo da aula é obrigatório"],
+      default: "",
     },
     videoUrl: {
       type: String,

@@ -1,12 +1,22 @@
 import { auth } from "@/auth";
 import Link from "next/link";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import Card from "@mui/material/Card";
+import CardContent from "@mui/material/CardContent";
+import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
+import Stack from "@mui/material/Stack";
+import Grid from "@mui/material/Grid";
+import Paper from "@mui/material/Paper";
+import Divider from "@mui/material/Divider";
+import PeopleIcon from "@mui/icons-material/People";
+import AssignmentIcon from "@mui/icons-material/Assignment";
+import TrendingUpIcon from "@mui/icons-material/TrendingUp";
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import connectDB from "@/lib/db/mongodb";
 import User from "@/models/User";
 import Submission from "@/models/Submission";
-import { Users, ClipboardList, TrendingUp, ExternalLink } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -49,143 +59,187 @@ export default async function InstrutorPage() {
     console.error("Erro ao carregar dados:", error);
   }
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "aprovado":
+        return "success";
+      case "reprovado":
+        return "error";
+      case "em_revisao":
+        return "info";
+      default:
+        return "default";
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "aprovado":
+        return "Aprovado";
+      case "reprovado":
+        return "Reprovado";
+      case "em_revisao":
+        return "Em Revisão";
+      default:
+        return "Pendente";
+    }
+  };
+
   return (
-    <div sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-      <div>
-        <h1 variant="h3" fontWeight="bold">Dashboard do Instrutor</h1>
-        <p className="text-muted-foreground mt-1">
+    <Stack spacing={3}>
+      <Box>
+        <Typography variant="h3" fontWeight="bold">
+          Dashboard do Instrutor
+        </Typography>
+        <Typography variant="body1" color="text.secondary" sx={{ mt: 0.5 }}>
           Olá, {session?.user?.name}! Acompanhe o progresso dos seus alunos
-        </p>
-      </div>
+        </Typography>
+      </Box>
 
-      <div container spacing={3}>
-        <Card>
-          <CardHeader>
-            <CardTitle sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <Users className="w-5 h-5" />
-              Total de Alunos
-            </CardTitle>
-            <CardDescription>Alunos ativos</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div variant="h3" fontWeight="bold">{totalStudents}</div>
-            <Link href="/instrutor/alunos">
-              <Button variant="outline" size="sm" className="mt-4 w-full">
-                Ver Alunos
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
+      <Grid container spacing={3}>
+        <Grid item xs={12} md={4}>
+          <Card>
+            <CardContent>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                <PeopleIcon sx={{ color: "primary.main" }} />
+                <Typography variant="h6" fontWeight="medium">
+                  Total de Alunos
+                </Typography>
+              </Box>
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                Alunos ativos
+              </Typography>
+              <Typography variant="h3" fontWeight="bold" sx={{ my: 2 }}>
+                {totalStudents}
+              </Typography>
+              <Link href="/instrutor/alunos" style={{ textDecoration: "none" }}>
+                <Button variant="outlined" size="small" fullWidth>
+                  Ver Alunos
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        </Grid>
 
-        <Card>
-          <CardHeader>
-            <CardTitle sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <ClipboardList className="w-5 h-5" />
-              Revisões Pendentes
-            </CardTitle>
-            <CardDescription>Projetos aguardando</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div variant="h3" fontWeight="bold">{pendingReviews}</div>
-            <Link href="/instrutor/revisoes">
-              <Button variant="outline" size="sm" className="mt-4 w-full">
-                Ver Fila
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
+        <Grid item xs={12} md={4}>
+          <Card>
+            <CardContent>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                <AssignmentIcon sx={{ color: "primary.main" }} />
+                <Typography variant="h6" fontWeight="medium">
+                  Revisões Pendentes
+                </Typography>
+              </Box>
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                Projetos aguardando
+              </Typography>
+              <Typography variant="h3" fontWeight="bold" sx={{ my: 2 }}>
+                {pendingReviews}
+              </Typography>
+              <Link href="/instrutor/revisoes" style={{ textDecoration: "none" }}>
+                <Button variant="outlined" size="small" fullWidth>
+                  Ver Fila
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        </Grid>
 
-        <Card>
-          <CardHeader>
-            <CardTitle sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <TrendingUp className="w-5 h-5" />
-              Taxa de Aprovação
-            </CardTitle>
-            <CardDescription>Média geral</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div variant="h3" fontWeight="bold">
-              {approvalRate > 0 ? `${approvalRate}%` : "-"}
-            </div>
-            <p className="text-sm text-muted-foreground mt-2">
-              {approvalRate > 0 ? "Projetos aprovados" : "Dados insuficientes"}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+        <Grid item xs={12} md={4}>
+          <Card>
+            <CardContent>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                <TrendingUpIcon sx={{ color: "primary.main" }} />
+                <Typography variant="h6" fontWeight="medium">
+                  Taxa de Aprovação
+                </Typography>
+              </Box>
+              <Typography variant="body2" color="text.secondary" gutterBottom>
+                Média geral
+              </Typography>
+              <Typography variant="h3" fontWeight="bold" sx={{ my: 2 }}>
+                {approvalRate > 0 ? `${approvalRate}%` : "-"}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {approvalRate > 0 ? "Projetos aprovados" : "Dados insuficientes"}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Atividades Recentes</CardTitle>
-          <CardDescription>
-            Últimas submissões de projetos
-          </CardDescription>
-        </CardHeader>
         <CardContent>
-          {recentSubmissions.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">
-              Nenhuma atividade recente
-            </p>
-          ) : (
-            <div className="space-y-3">
-              {recentSubmissions.map((submission: any) => (
-                <div
-                  key={submission._id.toString()}
-                  className="flex items-center gap-4 p-3 rounded-lg border hover:bg-muted/50 transition-colors"
-                >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <p className="font-medium truncate">
-                        {submission.studentId?.name || "Aluno desconhecido"}
-                      </p>
-                      <Badge
-                        variant={
-                          submission.status === "aprovado"
-                            ? "default"
-                            : submission.status === "reprovado"
-                            ? "destructive"
-                            : "secondary"
-                        }
-                      >
-                        {submission.status === "aprovado"
-                          ? "Aprovado"
-                          : submission.status === "reprovado"
-                          ? "Reprovado"
-                          : submission.status === "em_revisao"
-                          ? "Em Revisão"
-                          : "Pendente"}
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground truncate">
-                      {submission.projectId?.title || "Projeto"}
-                    </p>
-                  </div>
+          <Typography variant="h5" fontWeight="bold" gutterBottom>
+            Atividades Recentes
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            Últimas submissões de projetos
+          </Typography>
 
-                  <div className="text-right">
-                    <p className="text-xs text-muted-foreground">
+          {recentSubmissions.length === 0 ? (
+            <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ py: 8 }}>
+              Nenhuma atividade recente
+            </Typography>
+          ) : (
+            <Stack spacing={2} divider={<Divider />}>
+              {recentSubmissions.map((submission: any) => (
+                <Paper
+                  key={submission._id.toString()}
+                  sx={{
+                    p: 2,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 2,
+                    "&:hover": { bgcolor: "action.hover" },
+                    transition: "all 0.2s",
+                  }}
+                  elevation={0}
+                  variant="outlined"
+                >
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
+                      <Typography fontWeight="medium" noWrap>
+                        {submission.studentId?.name || "Aluno desconhecido"}
+                      </Typography>
+                      <Chip
+                        label={getStatusLabel(submission.status)}
+                        color={getStatusColor(submission.status) as any}
+                        size="small"
+                      />
+                    </Box>
+                    <Typography variant="body2" color="text.secondary" noWrap>
+                      {submission.projectId?.title || "Projeto"}
+                    </Typography>
+                  </Box>
+
+                  <Box sx={{ textAlign: "right" }}>
+                    <Typography variant="caption" color="text.secondary" display="block">
                       {formatDistanceToNow(new Date(submission.submittedAt), {
                         addSuffix: true,
                         locale: ptBR,
                       })}
-                    </p>
+                    </Typography>
                     {submission.githubUrl && (
-                      <a
+                      <Button
+                        component="a"
                         href={submission.githubUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-1"
+                        size="small"
+                        startIcon={<OpenInNewIcon sx={{ fontSize: 14 }} />}
+                        sx={{ mt: 0.5, fontSize: "0.75rem" }}
                       >
-                        <ExternalLink className="w-3 h-3" />
                         GitHub
-                      </a>
+                      </Button>
                     )}
-                  </div>
-                </div>
+                  </Box>
+                </Paper>
               ))}
-            </div>
+            </Stack>
           )}
         </CardContent>
       </Card>
-    </div>
+    </Stack>
   );
 }
