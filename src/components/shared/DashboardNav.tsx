@@ -13,6 +13,7 @@ import {
   BarChart3,
   LogOut,
   GraduationCap,
+  Bot,
 } from "lucide-react";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
@@ -39,6 +40,7 @@ export default function DashboardNav({ user }: DashboardNavProps) {
     { href: "/aluno", label: "Início", icon: GraduationCap },
     { href: "/aluno/curso", label: "Curso", icon: BookOpen },
     { href: "/aluno/projetos", label: "Projetos", icon: FolderKanban },
+    { href: "/aluno/assistente", label: "Assistente Virtual", icon: Bot },
     { href: "/aluno/perfil", label: "Perfil", icon: User },
   ];
 
