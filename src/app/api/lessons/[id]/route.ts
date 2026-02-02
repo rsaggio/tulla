@@ -57,10 +57,10 @@ export async function GET(
       );
     }
 
-    let quiz = null;
-    let activity = null;
-    let quizSubmission = null;
-    let activitySubmission = null;
+    let quiz: any = null;
+    let activity: any = null;
+    let quizSubmission: any = null;
+    let activitySubmission: any = null;
 
     // Se for quiz, buscar o quiz associado
     if (lesson.type === "quiz") {

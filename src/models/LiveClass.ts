@@ -1,7 +1,6 @@
 import mongoose, { Document, Schema } from "mongoose";
 
 export interface ILiveClass extends Document {
-  _id: string;
   cohortId: mongoose.Types.ObjectId;
   title: string;
   description?: string;

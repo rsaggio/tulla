@@ -8,7 +8,6 @@ export interface IQuizQuestion {
 }
 
 export interface IQuiz extends Document {
-  _id: string;
   lessonId: mongoose.Types.ObjectId;
   title: string;
   description?: string;

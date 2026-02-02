@@ -28,7 +28,7 @@ export async function GET(
     const module = await Module.findById(moduleId).populate("lessons");
 
     if (!module) {
-      return NextResponse.json(projects.map(p => ({ ...p.toObject(), isLocked: false, completedLessons: 0, totalLessons: 0 })));
+      return NextResponse.json(projects.map((p: any) => ({ ...p.toObject(), isLocked: false, completedLessons: 0, totalLessons: 0 })));
     }
 
     const totalLessons = module.lessons.length;
@@ -56,7 +56,7 @@ export async function GET(
     const isModuleComplete = completedLessonsInModule >= totalLessons && totalLessons > 0;
 
     // Adicionar informação de bloqueio a cada projeto
-    const projectsWithLockStatus = projects.map((project) => ({
+    const projectsWithLockStatus = projects.map((project: any) => ({
       ...project.toObject(),
       isLocked: !isModuleComplete,
       completedLessons: completedLessonsInModule,

@@ -2,7 +2,7 @@ import * as React from "react";
 import MuiButton, { ButtonProps as MuiButtonProps } from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
 
-export interface ButtonProps extends Omit<MuiButtonProps, 'variant'> {
+export interface ButtonProps extends Omit<MuiButtonProps, 'variant' | 'size'> {
   variant?: "default" | "destructive" | "outline" | "secondary" | "ghost" | "link";
   size?: "default" | "sm" | "lg" | "icon";
   asChild?: boolean;

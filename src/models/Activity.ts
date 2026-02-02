@@ -1,7 +1,6 @@
 import mongoose, { Document, Schema } from "mongoose";
 
 export interface IActivity extends Document {
-  _id: string;
   lessonId: mongoose.Types.ObjectId;
   title: string;
   description: string; // Descrição da atividade em markdown

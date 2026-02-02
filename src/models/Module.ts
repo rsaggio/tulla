@@ -1,7 +1,6 @@
 import mongoose, { Document, Schema } from "mongoose";
 
 export interface IModule extends Document {
-  _id: string;
   courseId: mongoose.Types.ObjectId;
   title: string;
   description: string;

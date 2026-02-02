@@ -347,7 +347,7 @@ Capacitar o aluno a:
       model: "gpt-4o-mini",
       messages: [
         systemPrompt,
-        ...recentMessages.map((m) => ({
+        ...recentMessages.map((m: any) => ({
           role: m.role,
           content: m.content,
         })),
@@ -368,7 +368,7 @@ Capacitar o aluno a:
     conversation.messages.push(assistantMessage);
 
     // Atualizar título da conversa se for a primeira mensagem do usuário
-    if (conversation.messages.filter((m) => m.role === "user").length === 1) {
+    if (conversation.messages.filter((m: any) => m.role === "user").length === 1) {
       // Gerar título baseado na primeira mensagem (primeiras 50 chars)
       conversation.title = message.substring(0, 50) + (message.length > 50 ? "..." : "");
     }

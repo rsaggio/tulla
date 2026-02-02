@@ -114,8 +114,8 @@ export default function CohortDetailPage() {
           </Typography>
         </Box>
         <Chip
-          label={statusConfig[cohort.status].label}
-          color={statusConfig[cohort.status].color}
+          label={statusConfig[cohort.status as keyof typeof statusConfig]?.label}
+          color={statusConfig[cohort.status as keyof typeof statusConfig]?.color}
         />
         <Link href={`/admin/turmas/${cohortId}/editar`} passHref style={{ textDecoration: "none" }}>
           <Button variant="outlined" startIcon={<EditIcon />}>

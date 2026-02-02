@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
 
     // Buscar progresso de cada aluno
     const studentsWithProgress = await Promise.all(
-      students.map(async (student) => {
+      students.map(async (student: any) => {
         const progress = await Progress.findOne({
           studentId: student._id,
           courseId: course._id,
@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
     );
 
     // Ordenar por último acesso (mais recente primeiro)
-    studentsWithProgress.sort((a, b) => {
+    studentsWithProgress.sort((a: any, b: any) => {
       const dateA = a.progress?.lastActivityAt || a.createdAt;
       const dateB = b.progress?.lastActivityAt || b.createdAt;
       return new Date(dateB).getTime() - new Date(dateA).getTime();

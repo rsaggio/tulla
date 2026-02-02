@@ -34,7 +34,7 @@ export default function DashboardLayoutClient({
   return (
     <Box sx={{ height: "100vh", display: "flex", overflow: "hidden" }}>
       <DashboardNav
-        user={user}
+        user={user as any}
         mobileOpen={mobileOpen}
         onMobileClose={() => setMobileOpen(false)}
       />

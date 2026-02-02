@@ -7,7 +7,6 @@ export interface IQuizAnswer {
 }
 
 export interface IQuizSubmission extends Document {
-  _id: string;
   quizId: mongoose.Types.ObjectId;
   studentId: mongoose.Types.ObjectId;
   lessonId: mongoose.Types.ObjectId;

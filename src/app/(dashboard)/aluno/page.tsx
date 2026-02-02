@@ -22,7 +22,7 @@ export default async function AlunoPage() {
   const session = await auth();
 
   let progressData = null;
-  let course = null;
+  let course: any = null;
   let pendingSubmissions = 0;
   let lastAccessedLesson = null;
   let lastAccessedModule = null;

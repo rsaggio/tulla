@@ -43,7 +43,7 @@ export async function POST(
     }
 
     // Criar array de respostas com verificação de corretude
-    const quizAnswers = quiz.questions.map((question, index) => ({
+    const quizAnswers = quiz.questions.map((question: any, index: number) => ({
       questionIndex: index,
       selectedAnswer: answers[index],
       isCorrect: answers[index] === question.correctAnswer,

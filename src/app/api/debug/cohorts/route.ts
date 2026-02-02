@@ -16,13 +16,13 @@ export async function GET() {
       .lean();
 
     return NextResponse.json({
-      alunos: alunos.map(a => ({
+      alunos: alunos.map((a: any) => ({
         id: a._id,
         name: a.name,
         email: a.email,
         enrolledCohorts: a.enrolledCohorts || [],
       })),
-      turmas: turmas.map(t => ({
+      turmas: turmas.map((t: any) => ({
         id: t._id,
         name: t.name,
         code: t.code,

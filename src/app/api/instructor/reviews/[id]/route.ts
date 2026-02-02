@@ -55,7 +55,7 @@ export async function PUT(
     submission.status = status;
     submission.feedback = feedback;
     submission.grade = grade || (status === "aprovado" ? 100 : 0);
-    submission.reviewedBy = session.user.id;
+    submission.reviewedBy = session.user.id as any;
     submission.reviewedAt = new Date();
 
     await submission.save();
@@ -66,7 +66,7 @@ export async function PUT(
         studentId: submission.studentId,
       });
 
-      if (progress && !progress.completedProjects.includes(submission.projectId)) {
+      if (progress && submission.projectId && !progress.completedProjects.includes(submission.projectId)) {
         progress.completedProjects.push(submission.projectId);
         await progress.save();
       }

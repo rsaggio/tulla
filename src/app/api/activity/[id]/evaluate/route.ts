@@ -191,7 +191,7 @@ ${content}`,
       submission: {
         _id: submission._id,
         status: submission.status,
-        submittedAt: submission.createdAt,
+        submittedAt: (submission as any).createdAt,
       },
     });
   } catch (error) {

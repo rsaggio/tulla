@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
       .select("_id title updatedAt messages");
 
     // Retornar conversas com preview da última mensagem
-    const conversationsWithPreview = conversations.map((conv) => ({
+    const conversationsWithPreview = conversations.map((conv: any) => ({
       _id: conv._id,
       title: conv.title,
       updatedAt: conv.updatedAt,

@@ -1,7 +1,6 @@
 import mongoose, { Document, Schema } from "mongoose";
 
 export interface ICohort extends Document {
-  _id: string;
   courseId: mongoose.Types.ObjectId;
   name: string;
   code: string;

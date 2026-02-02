@@ -34,7 +34,7 @@ export async function GET(
     }
 
     // Buscar curso ativo
-    const course = await Course.findOne({ isActive: true })
+    const course: any = await Course.findOne({ isActive: true })
       .populate({
         path: "modules",
         populate: {
