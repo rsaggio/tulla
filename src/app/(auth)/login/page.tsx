@@ -110,10 +110,7 @@ export default function LoginPage() {
                 </Button>
 
                 <Typography variant="body2" textAlign="center" color="text.secondary">
-                  Não tem uma conta?{" "}
-                  <Link href="/cadastro" style={{ color: "inherit", fontWeight: 500 }}>
-                    Cadastre-se
-                  </Link>
+                  Acesso exclusivo para alunos cadastrados.
                 </Typography>
               </Stack>
             </CardFooter>

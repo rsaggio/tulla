@@ -14,7 +14,9 @@
       "Bash(wsl:*)",
       "Bash(head:*)",
       "Bash(tree:*)",
-      "Bash(npx ts-node:*)"
+      "Bash(npx ts-node:*)",
+      "Bash(npm run build:*)",
+      "Bash(cd:*)"
     ]
   }
 }

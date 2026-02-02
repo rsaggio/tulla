@@ -9,8 +9,12 @@ export default auth((req) => {
   // Rotas públicas
   const isPublicRoute =
     nextUrl.pathname === "/" ||
-    nextUrl.pathname === "/login" ||
-    nextUrl.pathname === "/cadastro";
+    nextUrl.pathname === "/login";
+
+  // Redirecionar /cadastro para /login (registro público desativado)
+  if (nextUrl.pathname === "/cadastro") {
+    return NextResponse.redirect(new URL("/login", nextUrl));
+  }
 
   // Rotas protegidas por role
   const isAlunoRoute = nextUrl.pathname.startsWith("/aluno");
@@ -23,7 +27,7 @@ export default auth((req) => {
   }
 
   // Se está logado e tenta acessar login/cadastro, redireciona para dashboard
-  if (isLoggedIn && (nextUrl.pathname === "/login" || nextUrl.pathname === "/cadastro")) {
+  if (isLoggedIn && nextUrl.pathname === "/login") {
     return NextResponse.redirect(new URL(`/${userRole}`, nextUrl));
   }
 

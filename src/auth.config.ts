@@ -87,7 +87,7 @@ export const authConfig: NextAuthConfig = {
       } else if (isLoggedIn) {
         // Se está logado e tenta acessar páginas públicas, redireciona para dashboard
         const role = auth.user.role;
-        if (nextUrl.pathname === "/login" || nextUrl.pathname === "/cadastro" || nextUrl.pathname === "/") {
+        if (nextUrl.pathname === "/login" || nextUrl.pathname === "/") {
           return Response.redirect(new URL(`/${role}`, nextUrl));
         }
       }

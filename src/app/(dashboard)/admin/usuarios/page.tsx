@@ -20,6 +20,9 @@ import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import SearchIcon from "@mui/icons-material/Search";
+import CasinoIcon from "@mui/icons-material/Casino";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import Tooltip from "@mui/material/Tooltip";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -148,6 +151,18 @@ export default function UsuariosPage() {
     setShowCreateForm(true);
   }
 
+  function generatePassword() {
+    const chars = "abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    const symbols = "!@#$%&*";
+    let password = "";
+    for (let i = 0; i < 10; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    password += symbols.charAt(Math.floor(Math.random() * symbols.length));
+    password += Math.floor(Math.random() * 10);
+    setFormData({ ...formData, password });
+  }
+
   function cancelForm() {
     setShowCreateForm(false);
     setEditingUser(null);
@@ -268,12 +283,23 @@ export default function UsuariosPage() {
                   <TextField
                     fullWidth
                     label={`Senha ${editingUser ? "(deixe em branco para não alterar)" : ""}`}
-                    type="password"
+                    type={formData.password ? "text" : "password"}
                     value={formData.password}
                     onChange={(e) =>
                       setFormData({ ...formData, password: e.target.value })
                     }
                     required={!editingUser}
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <Tooltip title="Gerar senha aleatória">
+                            <IconButton onClick={generatePassword} edge="end" size="small">
+                              <CasinoIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </InputAdornment>
+                      ),
+                    }}
                   />
                 </Grid>
 
