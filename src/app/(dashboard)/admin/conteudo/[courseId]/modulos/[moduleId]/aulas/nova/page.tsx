@@ -30,10 +30,14 @@ export default function NovaAulaPage({
   const [error, setError] = useState("");
   const [content, setContent] = useState("");
   const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoUrlInput, setVideoUrlInput] = useState("");
+  const [videoSource, setVideoSource] = useState<"url" | "upload">("url");
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [lessonType, setLessonType] = useState("teoria");
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
+  const [activityDescription, setActivityDescription] = useState("");
+  const [activityInstructions, setActivityInstructions] = useState("");
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -50,6 +54,13 @@ export default function NovaAulaPage({
       return;
     }
 
+    // Validar activity
+    if (lessonType === "activity" && !activityInstructions.trim()) {
+      setError("Preencha as instruções do exercício prático");
+      setLoading(false);
+      return;
+    }
+
     console.log("=== FRONTEND: Criando aula ===");
     console.log("Tipo da aula:", lessonType);
     console.log("Arquivo de vídeo selecionado:", videoFile ? videoFile.name : "nenhum");
@@ -58,40 +69,38 @@ export default function NovaAulaPage({
       let videoUrl = undefined;
       let videoFileName = undefined;
 
-      // Se for tipo vídeo e tiver arquivo, fazer upload
-      if (lessonType === "video" && videoFile) {
-        console.log("Iniciando upload do vídeo...");
-        setUploading(true);
-        setUploadProgress(0);
+      if (lessonType === "video") {
+        if (videoSource === "url" && videoUrlInput) {
+          // Usar URL direta (Vimeo/YouTube)
+          videoUrl = videoUrlInput;
+        } else if (videoSource === "upload" && videoFile) {
+          // Fazer upload do arquivo
+          console.log("Iniciando upload do vídeo...");
+          setUploading(true);
+          setUploadProgress(0);
 
-        const uploadFormData = new FormData();
-        uploadFormData.append("video", videoFile);
+          const uploadFormData = new FormData();
+          uploadFormData.append("video", videoFile);
 
-        console.log("Enviando requisição para /api/upload/video");
-        const uploadRes = await fetch("/api/upload/video", {
-          method: "POST",
-          body: uploadFormData,
-        });
+          const uploadRes = await fetch("/api/upload/video", {
+            method: "POST",
+            body: uploadFormData,
+          });
 
-        console.log("Status da resposta:", uploadRes.status);
+          if (!uploadRes.ok) {
+            const errorData = await uploadRes.json();
+            throw new Error(errorData.error || "Erro ao fazer upload do vídeo");
+          }
 
-        if (!uploadRes.ok) {
-          const errorData = await uploadRes.json();
-          console.error("Erro no upload:", errorData);
-          throw new Error(errorData.error || "Erro ao fazer upload do vídeo");
+          const uploadData = await uploadRes.json();
+          videoUrl = uploadData.videoUrl;
+          videoFileName = uploadData.fileName;
+          setUploading(false);
+          setUploadProgress(100);
         }
-
-        const uploadData = await uploadRes.json();
-        console.log("Upload bem-sucedido:", uploadData);
-        videoUrl = uploadData.videoUrl;
-        videoFileName = uploadData.fileName;
-        setUploading(false);
-        setUploadProgress(100);
-      } else {
-        console.log("Pulando upload: tipo não é vídeo ou arquivo não selecionado");
       }
 
-      const lessonData = {
+      const lessonData: any = {
         title: formData.get("title") as string,
         content: content,
         type: lessonType,
@@ -101,6 +110,13 @@ export default function NovaAulaPage({
         quiz: lessonType === "quiz" ? quizQuestions : undefined,
         moduleId,
       };
+
+      if (lessonType === "activity") {
+        lessonData.activity = {
+          description: activityDescription || content,
+          instructions: activityInstructions,
+        };
+      }
 
       const res = await fetch(`/api/modules/${moduleId}/lessons`, {
         method: "POST",
@@ -201,46 +217,80 @@ export default function NovaAulaPage({
                   <Typography variant="body2" fontWeight="medium" sx={{ mb: 1 }}>
                     Vídeo da Aula
                   </Typography>
-                  <Button
-                    component="label"
-                    variant="outlined"
-                    startIcon={<CloudUploadIcon />}
-                    sx={{ mb: 1 }}
-                  >
-                    {videoFile ? "Alterar Vídeo" : "Fazer Upload do Vídeo"}
-                    <input
-                      type="file"
-                      hidden
-                      accept="video/mp4,video/webm,video/ogg,video/quicktime"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          setVideoFile(file);
-                        }
-                      }}
-                    />
-                  </Button>
-                  {videoFile && (
-                    <Box sx={{ mt: 1 }}>
-                      <Typography variant="body2" color="text.secondary">
-                        Arquivo selecionado: {videoFile.name}
+                  <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
+                    <Button
+                      variant={videoSource === "url" ? "contained" : "outlined"}
+                      size="small"
+                      onClick={() => setVideoSource("url")}
+                    >
+                      URL do Vídeo
+                    </Button>
+                    <Button
+                      variant={videoSource === "upload" ? "contained" : "outlined"}
+                      size="small"
+                      onClick={() => setVideoSource("upload")}
+                    >
+                      Upload de Arquivo
+                    </Button>
+                  </Box>
+
+                  {videoSource === "url" ? (
+                    <Box>
+                      <TextField
+                        fullWidth
+                        label="URL do Vídeo (Vimeo ou YouTube)"
+                        placeholder="Ex: https://vimeo.com/123456789"
+                        value={videoUrlInput}
+                        onChange={(e) => setVideoUrlInput(e.target.value)}
+                      />
+                      <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: "block" }}>
+                        Cole a URL do Vimeo ou YouTube
                       </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        Tamanho: {(videoFile.size / (1024 * 1024)).toFixed(2)} MB
+                    </Box>
+                  ) : (
+                    <Box>
+                      <Button
+                        component="label"
+                        variant="outlined"
+                        startIcon={<CloudUploadIcon />}
+                        sx={{ mb: 1 }}
+                      >
+                        {videoFile ? "Alterar Vídeo" : "Fazer Upload do Vídeo"}
+                        <input
+                          type="file"
+                          hidden
+                          accept="video/mp4,video/webm,video/ogg,video/quicktime"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              setVideoFile(file);
+                            }
+                          }}
+                        />
+                      </Button>
+                      {videoFile && (
+                        <Box sx={{ mt: 1 }}>
+                          <Typography variant="body2" color="text.secondary">
+                            Arquivo selecionado: {videoFile.name}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            Tamanho: {(videoFile.size / (1024 * 1024)).toFixed(2)} MB
+                          </Typography>
+                        </Box>
+                      )}
+                      {uploading && (
+                        <Box sx={{ mt: 2 }}>
+                          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                            Fazendo upload do vídeo...
+                          </Typography>
+                          <LinearProgress variant="determinate" value={uploadProgress} />
+                        </Box>
+                      )}
+                      <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: "block" }}>
+                        Formatos aceitos: MP4, WebM, OGG, MOV. Tamanho máximo: 500MB
                       </Typography>
                     </Box>
                   )}
-                  {uploading && (
-                    <Box sx={{ mt: 2 }}>
-                      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                        Fazendo upload do vídeo...
-                      </Typography>
-                      <LinearProgress variant="determinate" value={uploadProgress} />
-                    </Box>
-                  )}
-                  <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: "block" }}>
-                    Formatos aceitos: MP4, WebM, OGG, MOV. Tamanho máximo: 500MB
-                  </Typography>
                 </Box>
               )}
 
@@ -248,12 +298,39 @@ export default function NovaAulaPage({
                 <QuizEditor value={quizQuestions} onChange={setQuizQuestions} />
               )}
 
+              {lessonType === "activity" && (
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                  <Typography variant="subtitle1" fontWeight="bold">
+                    Configurações do Exercício Prático
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    label="Descrição da Atividade"
+                    placeholder="Descreva o objetivo do exercício..."
+                    value={activityDescription}
+                    onChange={(e) => setActivityDescription(e.target.value)}
+                    multiline
+                    rows={3}
+                  />
+                  <TextField
+                    fullWidth
+                    label="Instruções"
+                    placeholder="Instruções detalhadas para o aluno..."
+                    value={activityInstructions}
+                    onChange={(e) => setActivityInstructions(e.target.value)}
+                    multiline
+                    rows={4}
+                    required
+                  />
+                </Box>
+              )}
+
               <MarkdownEditor
                 value={content}
                 onChange={setContent}
                 label={lessonType === "quiz" ? "Conteúdo Introdutório (Markdown - Opcional)" : "Conteúdo (Markdown)"}
                 placeholder="# Título da Seção&#10;&#10;Escreva o conteúdo da aula em Markdown...&#10;&#10;```javascript&#10;const exemplo = 'código';&#10;```"
-                required={lessonType !== "quiz"}
+                required={lessonType !== "quiz" && lessonType !== "activity"}
                 rows={20}
                 name="content"
               />

@@ -11,6 +11,7 @@ import Avatar from "@mui/material/Avatar";
 import SendIcon from "@mui/icons-material/Send";
 import SmartToyIcon from "@mui/icons-material/SmartToy";
 import PersonIcon from "@mui/icons-material/Person";
+import MenuIcon from "@mui/icons-material/Menu";
 import ReactMarkdown from "react-markdown";
 import ConversationsSidebar from "@/components/chat/ConversationsSidebar";
 
@@ -42,6 +43,7 @@ export default function AssistenteVirtualPage() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingConversations, setLoadingConversations] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -194,7 +196,7 @@ export default function AssistenteVirtualPage() {
   }
 
   return (
-    <Box sx={{ height: "calc(100vh - 100px)", display: "flex" }}>
+    <Box sx={{ height: { xs: "calc(100vh - 120px)", md: "calc(100vh - 100px)" }, display: "flex" }}>
       {/* Sidebar com conversas */}
       <ConversationsSidebar
         conversations={conversations}
@@ -202,19 +204,39 @@ export default function AssistenteVirtualPage() {
         onSelectConversation={loadConversation}
         onNewConversation={handleNewConversation}
         onDeleteConversation={handleDeleteConversation}
+        mobileOpen={sidebarOpen}
+        onMobileClose={() => setSidebarOpen(false)}
       />
 
       {/* Área principal do chat */}
-      <Box sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
+      <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
         {/* Header */}
-        <Paper sx={{ p: 3, bgcolor: "primary.main", color: "primary.contrastText" }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-            <SmartToyIcon sx={{ fontSize: 40 }} />
-            <Box>
-              <Typography variant="h4" fontWeight="bold">
+        <Paper
+          sx={{
+            p: { xs: 1.5, sm: 2, md: 3 },
+            bgcolor: "primary.main",
+            color: "primary.contrastText",
+            borderRadius: 0,
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 1, sm: 2 } }}>
+            {/* Hamburger menu for mobile */}
+            <IconButton
+              onClick={() => setSidebarOpen(true)}
+              sx={{
+                display: { xs: "flex", md: "none" },
+                color: "primary.contrastText",
+                p: 0.5,
+              }}
+            >
+              <MenuIcon />
+            </IconButton>
+            <SmartToyIcon sx={{ fontSize: { xs: 28, sm: 36, md: 40 } }} />
+            <Box sx={{ minWidth: 0 }}>
+              <Typography fontWeight="bold" sx={{ fontSize: { xs: '1rem', sm: '1.25rem', md: '1.75rem' } }}>
                 Tulla - Assistente Virtual
               </Typography>
-              <Typography variant="body2" sx={{ opacity: 0.9 }}>
+              <Typography sx={{ opacity: 0.9, fontSize: { xs: '0.7rem', sm: '0.8rem', md: '0.875rem' }, display: { xs: 'none', sm: 'block' } }}>
                 Sua parceira de estudos em programação, disponível 24/7
               </Typography>
             </Box>
@@ -225,10 +247,11 @@ export default function AssistenteVirtualPage() {
         <Paper
           sx={{
             flex: 1,
-            p: 3,
+            p: { xs: 1.5, sm: 2, md: 3 },
             display: "flex",
             flexDirection: "column",
             overflow: "hidden",
+            borderRadius: 0,
           }}
         >
           {!currentConversationId ? (
@@ -242,8 +265,8 @@ export default function AssistenteVirtualPage() {
                 gap: 2,
               }}
             >
-              <SmartToyIcon sx={{ fontSize: 64, color: "text.disabled" }} />
-              <Typography variant="h6" color="text.secondary">
+              <SmartToyIcon sx={{ fontSize: { xs: 48, md: 64 }, color: "text.disabled" }} />
+              <Typography sx={{ color: "text.secondary", textAlign: "center", fontSize: { xs: '0.85rem', sm: '1rem', md: '1.15rem' } }}>
                 Selecione uma conversa ou crie uma nova
               </Typography>
             </Box>
@@ -254,7 +277,7 @@ export default function AssistenteVirtualPage() {
                   flex: 1,
                   overflowY: "auto",
                   mb: 2,
-                  pr: 1,
+                  pr: { xs: 0, sm: 1 },
                   "&::-webkit-scrollbar": {
                     width: "8px",
                   },
@@ -271,13 +294,13 @@ export default function AssistenteVirtualPage() {
                   },
                 }}
               >
-                <Stack spacing={3}>
+                <Stack spacing={{ xs: 2, sm: 3 }}>
                   {messages.map((message, index) => (
                     <Box
                       key={index}
                       sx={{
                         display: "flex",
-                        gap: 2,
+                        gap: { xs: 1, sm: 2 },
                         alignItems: "flex-start",
                         flexDirection: message.role === "user" ? "row-reverse" : "row",
                       }}
@@ -285,32 +308,38 @@ export default function AssistenteVirtualPage() {
                       <Avatar
                         sx={{
                           bgcolor: message.role === "assistant" ? "primary.main" : "secondary.main",
-                          width: 40,
-                          height: 40,
+                          width: { xs: 32, sm: 40 },
+                          height: { xs: 32, sm: 40 },
+                          flexShrink: 0,
                         }}
                       >
-                        {message.role === "assistant" ? <SmartToyIcon /> : <PersonIcon />}
+                        {message.role === "assistant" ? (
+                          <SmartToyIcon sx={{ fontSize: { xs: 18, sm: 24 } }} />
+                        ) : (
+                          <PersonIcon sx={{ fontSize: { xs: 18, sm: 24 } }} />
+                        )}
                       </Avatar>
                       <Paper
                         sx={{
-                          p: 2,
-                          maxWidth: "70%",
+                          p: { xs: 1.5, sm: 2 },
+                          maxWidth: { xs: "85%", sm: "75%", md: "70%" },
                           bgcolor: message.role === "assistant" ? "grey.100" : "primary.main",
                           color:
                             message.role === "assistant" ? "text.primary" : "primary.contrastText",
+                          minWidth: 0,
                         }}
                       >
                         <Box
                           sx={{
-                            "& p": { m: 0, mb: 1, "&:last-child": { mb: 0 } },
+                            "& p": { m: 0, mb: 1, "&:last-child": { mb: 0 }, fontSize: { xs: '0.85rem', sm: '0.925rem', md: '1rem' } },
                             "& pre": {
                               bgcolor: message.role === "assistant" ? "grey.800" : "rgba(0,0,0,0.2)",
                               color:
                                 message.role === "assistant" ? "grey.100" : "primary.contrastText",
-                              p: 2,
+                              p: { xs: 1, sm: 2 },
                               borderRadius: 1,
                               overflowX: "auto",
-                              fontSize: "0.875rem",
+                              fontSize: { xs: "0.75rem", sm: "0.875rem" },
                             },
                             "& code": {
                               bgcolor: message.role === "assistant" ? "grey.800" : "rgba(0,0,0,0.2)",
@@ -318,11 +347,12 @@ export default function AssistenteVirtualPage() {
                                 message.role === "assistant" ? "grey.100" : "primary.contrastText",
                               p: 0.5,
                               borderRadius: 0.5,
-                              fontSize: "0.875rem",
+                              fontSize: { xs: "0.75rem", sm: "0.875rem" },
                               fontFamily: "monospace",
+                              wordBreak: "break-all",
                             },
                             "& ul, & ol": { ml: 2, mb: 1 },
-                            "& li": { mb: 0.5 },
+                            "& li": { mb: 0.5, fontSize: { xs: '0.85rem', sm: '0.925rem', md: '1rem' } },
                           }}
                         >
                           <ReactMarkdown>{message.content}</ReactMarkdown>
@@ -334,6 +364,7 @@ export default function AssistenteVirtualPage() {
                             mt: 1,
                             opacity: 0.7,
                             textAlign: message.role === "user" ? "right" : "left",
+                            fontSize: { xs: '0.65rem', sm: '0.75rem' },
                           }}
                         >
                           {message.timestamp.toLocaleTimeString("pt-BR", {
@@ -345,12 +376,12 @@ export default function AssistenteVirtualPage() {
                     </Box>
                   ))}
                   {loading && (
-                    <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
-                      <Avatar sx={{ bgcolor: "primary.main", width: 40, height: 40 }}>
-                        <SmartToyIcon />
+                    <Box sx={{ display: "flex", gap: { xs: 1, sm: 2 }, alignItems: "center" }}>
+                      <Avatar sx={{ bgcolor: "primary.main", width: { xs: 32, sm: 40 }, height: { xs: 32, sm: 40 } }}>
+                        <SmartToyIcon sx={{ fontSize: { xs: 18, sm: 24 } }} />
                       </Avatar>
-                      <Paper sx={{ p: 2, bgcolor: "grey.100" }}>
-                        <Typography variant="body2" color="text.secondary" sx={{ fontStyle: "italic" }}>
+                      <Paper sx={{ p: { xs: 1.5, sm: 2 }, bgcolor: "grey.100" }}>
+                        <Typography sx={{ color: "text.secondary", fontStyle: "italic", fontSize: { xs: '0.8rem', sm: '0.875rem' } }}>
                           Tulla está digitando...
                         </Typography>
                       </Paper>
@@ -367,7 +398,7 @@ export default function AssistenteVirtualPage() {
                 sx={{
                   display: "flex",
                   gap: 1,
-                  pt: 2,
+                  pt: { xs: 1, sm: 2 },
                   borderTop: 1,
                   borderColor: "divider",
                 }}
@@ -376,10 +407,16 @@ export default function AssistenteVirtualPage() {
                   fullWidth
                   multiline
                   maxRows={4}
-                  placeholder="Digite sua dúvida ou mensagem..."
+                  placeholder="Digite sua dúvida..."
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   disabled={loading}
+                  size="small"
+                  sx={{
+                    "& .MuiInputBase-root": {
+                      fontSize: { xs: '0.85rem', sm: '1rem' },
+                    },
+                  }}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && !e.shiftKey) {
                       e.preventDefault();
@@ -394,14 +431,14 @@ export default function AssistenteVirtualPage() {
                   sx={{
                     bgcolor: "primary.main",
                     color: "primary.contrastText",
-                    width: 56,
-                    height: 56,
+                    width: { xs: 44, sm: 56 },
+                    height: { xs: 44, sm: 56 },
                     flexShrink: 0,
                     "&:hover": { bgcolor: "primary.dark" },
                     "&:disabled": { bgcolor: "action.disabledBackground" },
                   }}
                 >
-                  <SendIcon />
+                  <SendIcon sx={{ fontSize: { xs: 20, sm: 24 } }} />
                 </IconButton>
               </Box>
             </>

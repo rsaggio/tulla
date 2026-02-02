@@ -17,6 +17,27 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import ReactMarkdown from "react-markdown";
 import QuizView, { QuizQuestion } from "@/components/QuizView";
+import VimeoPlayer from "@/components/VimeoPlayer";
+import ActivityLesson from "@/components/course/ActivityLesson";
+
+interface ActivityData {
+  _id: string;
+  title: string;
+  description: string;
+  instructions: string;
+  expectedFormat?: string;
+  minWords?: number;
+  maxWords?: number;
+  resources?: { title: string; url: string }[];
+}
+
+interface ActivitySubmission {
+  content: string;
+  submittedAt: Date;
+  status: "pendente" | "em_revisao" | "aprovado" | "reprovado";
+  feedback?: string;
+  grade?: number;
+}
 
 interface Lesson {
   _id: string;
@@ -28,6 +49,8 @@ interface Lesson {
   type: string;
   resources?: { title: string; url: string }[];
   moduleId: string;
+  activity?: ActivityData;
+  activitySubmission?: ActivitySubmission;
 }
 
 export default function AulaPage({ params }: { params: Promise<{ id: string }> }) {
@@ -323,18 +346,47 @@ export default function AulaPage({ params }: { params: Promise<{ id: string }> }
 
           {lesson.videoUrl && (
             <Box sx={{ my: 3 }}>
-              <video
-                controls
-                style={{
-                  width: "100%",
-                  maxHeight: "600px",
-                  borderRadius: "8px",
-                  backgroundColor: "#000"
-                }}
-                src={lesson.videoUrl}
-              >
-                Seu navegador não suporta a tag de vídeo.
-              </video>
+              {/vimeo\.com/.test(lesson.videoUrl) ? (
+                <VimeoPlayer videoUrl={lesson.videoUrl} title={lesson.title} />
+              ) : /youtu\.?be/.test(lesson.videoUrl) ? (
+                <Box
+                  sx={{
+                    position: "relative",
+                    paddingTop: "56.25%",
+                    borderRadius: "8px",
+                    overflow: "hidden",
+                    backgroundColor: "#000",
+                  }}
+                >
+                  <iframe
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      width: "100%",
+                      height: "100%",
+                      border: 0,
+                    }}
+                    src={`https://www.youtube.com/embed/${lesson.videoUrl.match(/(?:youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*)/)?.[1]}`}
+                    title={lesson.title}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                </Box>
+              ) : (
+                <video
+                  controls
+                  style={{
+                    width: "100%",
+                    maxHeight: "600px",
+                    borderRadius: "8px",
+                    backgroundColor: "#000"
+                  }}
+                  src={lesson.videoUrl}
+                >
+                  Seu navegador não suporta a tag de vídeo.
+                </video>
+              )}
               {lesson.videoFileName && (
                 <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: "block" }}>
                   {lesson.videoFileName}
@@ -371,6 +423,32 @@ export default function AulaPage({ params }: { params: Promise<{ id: string }> }
                     await markAsComplete();
                   }
                 }}
+              />
+            </Box>
+          )}
+
+          {lesson.type === "activity" && lesson.activity && (
+            <Box sx={{ my: 4 }}>
+              <Divider sx={{ mb: 3 }} />
+              <ActivityLesson
+                activity={lesson.activity}
+                onSubmit={async (content: string) => {
+                  const res = await fetch(`/api/activity/${lesson.activity!._id}/evaluate`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ content }),
+                  });
+                  const data = await res.json();
+                  if (!res.ok) {
+                    throw new Error(data.error || "Erro ao enviar atividade");
+                  }
+                  if (data.status === "aprovado") {
+                    setIsCompleted(true);
+                  }
+                  loadLesson();
+                  return { grade: data.grade, feedback: data.feedback, status: data.status };
+                }}
+                previousSubmission={lesson.activitySubmission}
               />
             </Box>
           )}

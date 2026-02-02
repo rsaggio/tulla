@@ -199,25 +199,30 @@ export default function LessonPage() {
   };
 
   const handleActivitySubmit = async (content: string) => {
-    try {
-      const res = await fetch("/api/activity/" + activity._id + "/submit", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ content }),
-      });
+    const res = await fetch("/api/activity/" + activity._id + "/evaluate", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ content }),
+    });
 
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Erro ao enviar atividade");
-      }
+    const data = await res.json();
 
-      // Recarregar dados da atividade
-      await loadLessonData();
-    } catch (err: any) {
-      throw err;
+    if (!res.ok) {
+      throw new Error(data.error || "Erro ao enviar atividade");
     }
+
+    // Se aprovado, atualizar estado local
+    if (data.status === "aprovado") {
+      setIsCompleted(true);
+      setCompletedLessons((prev) => [...prev, lessonId]);
+    }
+
+    // Recarregar dados da atividade
+    await loadLessonData();
+
+    return { grade: data.grade, feedback: data.feedback, status: data.status };
   };
 
   const handleLessonClick = (moduleId: string, newLessonId: string) => {
@@ -286,7 +291,7 @@ export default function LessonPage() {
   }
 
   return (
-    <Box sx={{ display: "flex", minHeight: "100vh" }}>
+    <Box sx={{ display: "flex", height: "100vh", overflow: "hidden" }}>
       {/* Sidebar */}
       <CourseSidebar
         modules={modules}

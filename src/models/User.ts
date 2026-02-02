@@ -11,8 +11,11 @@ export interface IUser extends Document {
   lastLogin?: Date;
   // Campos específicos para alunos
   enrolledCourses?: mongoose.Types.ObjectId[];
+  enrolledCohorts?: mongoose.Types.ObjectId[];
   completedModules?: mongoose.Types.ObjectId[];
   currentModule?: mongoose.Types.ObjectId;
+  // Campos específicos para instrutores
+  instructingCohorts?: mongoose.Types.ObjectId[];
 }
 
 const UserSchema = new Schema<IUser>(
@@ -53,6 +56,12 @@ const UserSchema = new Schema<IUser>(
         ref: "Course",
       },
     ],
+    enrolledCohorts: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Cohort",
+      },
+    ],
     completedModules: [
       {
         type: Schema.Types.ObjectId,
@@ -63,6 +72,13 @@ const UserSchema = new Schema<IUser>(
       type: Schema.Types.ObjectId,
       ref: "Module",
     },
+    // Campos específicos para instrutores
+    instructingCohorts: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Cohort",
+      },
+    ],
   },
   {
     timestamps: true,

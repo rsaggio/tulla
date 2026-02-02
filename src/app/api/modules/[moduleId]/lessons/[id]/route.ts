@@ -3,6 +3,8 @@ import { auth } from "@/auth";
 import connectDB from "@/lib/db/mongodb";
 import Lesson from "@/models/Lesson";
 import Module from "@/models/Module";
+import Activity from "@/models/Activity";
+import Submission from "@/models/Submission";
 
 // GET /api/modules/[moduleId]/lessons/[id] - Buscar aula por ID
 export async function GET(
@@ -28,7 +30,28 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(lesson);
+    const result: any = lesson.toObject();
+
+    // Para aulas do tipo "activity", buscar atividade e submissão do aluno
+    if (lesson.type === "activity") {
+      const activity = await Activity.findOne({ lessonId: id });
+      if (activity) {
+        result.activity = activity;
+      }
+
+      if (session.user.role === "aluno") {
+        const submission = await Submission.findOne({
+          lessonId: id,
+          studentId: session.user.id,
+        }).sort({ createdAt: -1 });
+
+        if (submission) {
+          result.activitySubmission = submission;
+        }
+      }
+    }
+
+    return NextResponse.json(result);
   } catch (error) {
     console.error("Erro ao buscar aula:", error);
     return NextResponse.json(
@@ -63,9 +86,12 @@ export async function PUT(
       );
     }
 
+    // Extrair dados de atividade antes de atualizar a aula
+    const { activity: activityData, ...lessonBody } = body;
+
     const lesson = await Lesson.findByIdAndUpdate(
       id,
-      { ...body },
+      { ...lessonBody },
       { new: true, runValidators: true }
     );
 
@@ -73,6 +99,20 @@ export async function PUT(
       return NextResponse.json(
         { error: "Aula não encontrada" },
         { status: 404 }
+      );
+    }
+
+    // Se for activity, atualizar ou criar documento de Activity
+    if (body.type === "activity" && activityData) {
+      await Activity.findOneAndUpdate(
+        { lessonId: id },
+        {
+          lessonId: id,
+          title: lessonBody.title,
+          description: activityData.description || lessonBody.content || "",
+          instructions: activityData.instructions,
+        },
+        { upsert: true, new: true }
       );
     }
 

@@ -13,7 +13,6 @@ import {
   Button,
   Alert,
   LinearProgress,
-  Divider,
 } from "@mui/material";
 import {
   Quiz as QuizIcon,
@@ -53,6 +52,7 @@ export default function QuizLesson({
   onSubmit,
   previousSubmission,
 }: QuizLessonProps) {
+  const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<(number | null)[]>(
     new Array(quiz.questions.length).fill(null)
   );
@@ -60,27 +60,36 @@ export default function QuizLesson({
   const [result, setResult] = useState<{
     score: number;
     passed: boolean;
-    correctAnswers: boolean[];
   } | null>(
     previousSubmission
       ? {
           score: previousSubmission.score,
           passed: previousSubmission.passed,
-          correctAnswers: previousSubmission.answers.map((a) => a.isCorrect),
         }
       : null
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleAnswerChange = (questionIndex: number, answerIndex: number) => {
+  const handleAnswerChange = (answerIndex: number) => {
     if (submitted) return;
     const newAnswers = [...answers];
-    newAnswers[questionIndex] = answerIndex;
+    newAnswers[currentQuestion] = answerIndex;
     setAnswers(newAnswers);
   };
 
+  const handleNext = () => {
+    if (currentQuestion < quiz.questions.length - 1) {
+      setCurrentQuestion(currentQuestion + 1);
+    }
+  };
+
+  const handlePrevious = () => {
+    if (currentQuestion > 0) {
+      setCurrentQuestion(currentQuestion - 1);
+    }
+  };
+
   const handleSubmit = async () => {
-    // Verificar se todas as perguntas foram respondidas
     if (answers.some((a) => a === null)) {
       alert("Por favor, responda todas as perguntas antes de enviar.");
       return;
@@ -89,19 +98,17 @@ export default function QuizLesson({
     setIsSubmitting(true);
 
     try {
-      // Calcular resultado
-      const correctAnswers = quiz.questions.map(
+      const correctCount = quiz.questions.filter(
         (q, i) => answers[i] === q.correctAnswer
-      );
+      ).length;
       const score = Math.round(
-        (correctAnswers.filter(Boolean).length / quiz.questions.length) * 100
+        (correctCount / quiz.questions.length) * 100
       );
       const passed = score >= quiz.passingScore;
 
-      setResult({ score, passed, correctAnswers });
+      setResult({ score, passed });
       setSubmitted(true);
 
-      // Enviar para o backend
       await onSubmit(answers as number[], score, passed);
     } catch (error) {
       console.error("Erro ao enviar quiz:", error);
@@ -113,12 +120,13 @@ export default function QuizLesson({
 
   const handleRetry = () => {
     setAnswers(new Array(quiz.questions.length).fill(null));
+    setCurrentQuestion(0);
     setSubmitted(false);
     setResult(null);
   };
 
-  const progress =
-    (answers.filter((a) => a !== null).length / quiz.questions.length) * 100;
+  const allQuestionsAnswered = answers.every((a) => a !== null);
+  const question = quiz.questions[currentQuestion];
 
   return (
     <Box>
@@ -158,51 +166,39 @@ export default function QuizLesson({
           <Typography variant="body2">
             Sua nota: {result.score}% (Mínimo para passar: {quiz.passingScore}%)
           </Typography>
-          <Typography variant="body2">
-            Acertos: {result.correctAnswers.filter(Boolean).length} de{" "}
-            {quiz.questions.length}
-          </Typography>
+          {!result.passed && (
+            <Typography variant="body2">
+              Continue estudando e tente novamente!
+            </Typography>
+          )}
         </Alert>
       )}
 
-      {/* Progress */}
+      {/* Progress Bar */}
       {!submitted && (
         <Box sx={{ mb: 3 }}>
           <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
             <Typography variant="body2" color="text.secondary">
-              Progresso
+              Pergunta {currentQuestion + 1} de {quiz.questions.length}
             </Typography>
             <Typography variant="body2" color="text.secondary">
               {answers.filter((a) => a !== null).length} de {quiz.questions.length}{" "}
               respondidas
             </Typography>
           </Box>
-          <LinearProgress variant="determinate" value={progress} />
+          <LinearProgress
+            variant="determinate"
+            value={((currentQuestion + 1) / quiz.questions.length) * 100}
+          />
         </Box>
       )}
 
-      {/* Questions */}
-      <Box sx={{ mb: 3 }}>
-        {quiz.questions.map((question, qIndex) => (
-          <Paper
-            key={qIndex}
-            sx={{
-              p: 3,
-              mb: 2,
-              border: submitted
-                ? result?.correctAnswers[qIndex]
-                  ? 2
-                  : 2
-                : 1,
-              borderColor: submitted
-                ? result?.correctAnswers[qIndex]
-                  ? "success.main"
-                  : "error.main"
-                : "divider",
-            }}
-          >
+      {/* Question Card - only show when not submitted */}
+      {!submitted && (
+        <>
+          <Paper sx={{ p: 3, mb: 3 }}>
             <Typography variant="h6" fontWeight="bold" gutterBottom>
-              Questão {qIndex + 1}
+              Questão {currentQuestion + 1}
             </Typography>
             <Typography variant="body1" paragraph>
               {question.question}
@@ -210,91 +206,93 @@ export default function QuizLesson({
 
             <FormControl component="fieldset" fullWidth>
               <RadioGroup
-                value={answers[qIndex] !== null ? answers[qIndex] : ""}
-                onChange={(e) =>
-                  handleAnswerChange(qIndex, parseInt(e.target.value))
-                }
+                value={answers[currentQuestion] !== null ? answers[currentQuestion] : ""}
+                onChange={(e) => handleAnswerChange(parseInt(e.target.value))}
               >
-                {question.options.map((option, oIndex) => {
-                  const isCorrect = oIndex === question.correctAnswer;
-                  const isSelected = answers[qIndex] === oIndex;
-                  const showCorrectness = submitted;
-
-                  return (
-                    <FormControlLabel
-                      key={oIndex}
-                      value={oIndex}
-                      control={<Radio disabled={submitted} />}
-                      label={
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                          <Typography>{option}</Typography>
-                          {showCorrectness && isCorrect && (
-                            <CheckCircle
-                              sx={{ color: "success.main", fontSize: 20 }}
-                            />
-                          )}
-                          {showCorrectness && isSelected && !isCorrect && (
-                            <Cancel sx={{ color: "error.main", fontSize: 20 }} />
-                          )}
-                        </Box>
-                      }
-                      sx={{
-                        bgcolor: showCorrectness
-                          ? isCorrect
-                            ? "success.50"
-                            : isSelected
-                            ? "error.50"
-                            : "transparent"
-                          : "transparent",
-                        p: 1,
-                        borderRadius: 1,
-                        mb: 0.5,
-                      }}
-                    />
-                  );
-                })}
+                {question.options.map((option, oIndex) => (
+                  <FormControlLabel
+                    key={oIndex}
+                    value={oIndex}
+                    control={<Radio />}
+                    label={<Typography>{option}</Typography>}
+                    sx={{
+                      p: 1,
+                      borderRadius: 1,
+                      mb: 0.5,
+                      border: "1px solid",
+                      borderColor: "divider",
+                    }}
+                  />
+                ))}
               </RadioGroup>
             </FormControl>
-
-            {/* Explanation */}
-            {submitted && question.explanation && (
-              <>
-                <Divider sx={{ my: 2 }} />
-                <Alert severity="info" sx={{ mt: 2 }}>
-                  <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
-                    Explicação:
-                  </Typography>
-                  <Typography variant="body2">{question.explanation}</Typography>
-                </Alert>
-              </>
-            )}
           </Paper>
-        ))}
-      </Box>
 
-      {/* Actions */}
-      <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}>
-        {!submitted ? (
-          <Button
-            variant="contained"
-            size="large"
-            onClick={handleSubmit}
-            disabled={
-              answers.some((a) => a === null) || isSubmitting
-            }
-          >
-            {isSubmitting ? "Enviando..." : "Enviar Respostas"}
+          {/* Navigation Buttons */}
+          <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+            <Button
+              variant="outlined"
+              onClick={handlePrevious}
+              disabled={currentQuestion === 0}
+            >
+              Anterior
+            </Button>
+
+            <Box sx={{ display: "flex", gap: 2 }}>
+              {currentQuestion < quiz.questions.length - 1 && (
+                <Button variant="outlined" onClick={handleNext}>
+                  Próxima
+                </Button>
+              )}
+
+              {currentQuestion === quiz.questions.length - 1 && (
+                <Button
+                  variant="contained"
+                  onClick={handleSubmit}
+                  disabled={!allQuestionsAnswered || isSubmitting}
+                >
+                  {isSubmitting ? "Enviando..." : "Finalizar Quiz"}
+                </Button>
+              )}
+            </Box>
+          </Box>
+
+          {/* Question Navigator */}
+          <Box sx={{ mt: 3, p: 2, bgcolor: "action.hover", borderRadius: 1 }}>
+            <Typography variant="body2" fontWeight="medium" gutterBottom>
+              Navegação rápida:
+            </Typography>
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 1 }}>
+              {quiz.questions.map((_, index) => {
+                const isAnswered = answers[index] !== null;
+                const isCurrent = index === currentQuestion;
+
+                return (
+                  <Button
+                    key={index}
+                    variant={isCurrent ? "contained" : "outlined"}
+                    size="small"
+                    onClick={() => setCurrentQuestion(index)}
+                    sx={{ minWidth: 40 }}
+                  >
+                    {index + 1}
+                    {isAnswered && " ✓"}
+                  </Button>
+                );
+              })}
+            </Box>
+          </Box>
+        </>
+      )}
+
+      {/* Actions after submit */}
+      {submitted && !result?.passed && (
+        <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}>
+          <Button variant="outlined" size="large" onClick={handleRetry}>
+            Tentar Novamente
           </Button>
-        ) : (
-          <>
-            {!result?.passed && (
-              <Button variant="outlined" size="large" onClick={handleRetry}>
-                Tentar Novamente
-              </Button>
-            )}
-          </>
-        )}
-      </Box>
+        </Box>
+      )}
     </Box>
   );
 }

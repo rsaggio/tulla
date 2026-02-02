@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls:*)",
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(npx tsx:*)",
+      "Bash(npm install:*)",
+      "Bash(wsl -d Ubuntu -e bash -c \"cd /home/rsaggio/projects/tulla && npm install @vimeo/player && npm install -D @types/vimeo__player 2>/dev/null; echo DONE\")",
+      "Bash(wsl -d Ubuntu -e bash -c \"cd /home/rsaggio/projects/tulla && npm install @vimeo/player 2>&1; echo EXIT_CODE=$?\")",
+      "Bash(wsl -d Ubuntu -e bash -c:*)",
+      "Bash(wsl -d Ubuntu -e bash -lc \"cd /home/rsaggio/projects/tulla && which node && node node_modules/next/dist/bin/next lint 2>&1 | head -60\")",
+      "Bash(wsl -d Ubuntu -- bash -lc \"which node 2>&1; cd /home/rsaggio/projects/tulla && node --version 2>&1\")",
+      "Bash(wsl:*)",
+      "Bash(head:*)",
+      "Bash(tree:*)"
+    ]
+  }
+}

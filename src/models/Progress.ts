@@ -3,6 +3,7 @@ import mongoose, { Document, Schema } from "mongoose";
 export interface IProgress extends Document {
   studentId: mongoose.Types.ObjectId;
   courseId: mongoose.Types.ObjectId;
+  cohortId?: mongoose.Types.ObjectId;
   completedLessons: mongoose.Types.ObjectId[];
   completedProjects: mongoose.Types.ObjectId[];
   currentModuleId?: mongoose.Types.ObjectId;
@@ -24,6 +25,10 @@ const ProgressSchema = new Schema<IProgress>(
       type: Schema.Types.ObjectId,
       ref: "Course",
       required: [true, "ID do curso é obrigatório"],
+    },
+    cohortId: {
+      type: Schema.Types.ObjectId,
+      ref: "Cohort",
     },
     completedLessons: [
       {

@@ -66,7 +66,6 @@ export default function QuizView({ questions, onComplete }: QuizViewProps) {
         await onComplete(correctCount, questions.length);
       } catch (error) {
         console.error("Erro ao processar resultado do quiz:", error);
-        // Continua mostrando os resultados mesmo se houver erro
       }
     }
   };
@@ -80,14 +79,6 @@ export default function QuizView({ questions, onComplete }: QuizViewProps) {
       total: questions.length,
       percentage: Math.round((correctCount / questions.length) * 100),
     };
-  };
-
-  const isAnswerCorrect = (questionIndex: number, answerIndex: number) => {
-    return answerIndex === questions[questionIndex].correctAnswer;
-  };
-
-  const isAnswerSelected = (questionIndex: number, answerIndex: number) => {
-    return selectedAnswers[questionIndex] === answerIndex;
   };
 
   const allQuestionsAnswered = selectedAnswers.every((answer) => answer !== null);
@@ -109,20 +100,22 @@ export default function QuizView({ questions, onComplete }: QuizViewProps) {
   return (
     <Box>
       {/* Progress Bar */}
-      <Box sx={{ mb: 3 }}>
-        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
-          <Typography variant="body2" color="text.secondary">
-            Pergunta {currentQuestion + 1} de {questions.length}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {Math.round(((currentQuestion + 1) / questions.length) * 100)}% completo
-          </Typography>
+      {!submitted && (
+        <Box sx={{ mb: 3 }}>
+          <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
+            <Typography variant="body2" color="text.secondary">
+              Pergunta {currentQuestion + 1} de {questions.length}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {Math.round(((currentQuestion + 1) / questions.length) * 100)}% completo
+            </Typography>
+          </Box>
+          <LinearProgress
+            variant="determinate"
+            value={((currentQuestion + 1) / questions.length) * 100}
+          />
         </Box>
-        <LinearProgress
-          variant="determinate"
-          value={((currentQuestion + 1) / questions.length) * 100}
-        />
-      </Box>
+      )}
 
       {/* Results Summary */}
       {showResults && score && (
@@ -142,158 +135,100 @@ export default function QuizView({ questions, onComplete }: QuizViewProps) {
         </Alert>
       )}
 
-      {/* Question Card */}
-      <Card>
-        <CardContent>
-          <Typography variant="h6" fontWeight="bold" gutterBottom>
-            {questions[currentQuestion].question}
-          </Typography>
+      {/* Question Card - only show when not submitted */}
+      {!submitted && (
+        <>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" fontWeight="bold" gutterBottom>
+                {questions[currentQuestion].question}
+              </Typography>
 
-          <FormControl component="fieldset" sx={{ width: "100%", mt: 3 }}>
-            <RadioGroup
-              value={selectedAnswers[currentQuestion] ?? ""}
-              onChange={(e) => handleAnswerSelect(parseInt(e.target.value))}
+              <FormControl component="fieldset" sx={{ width: "100%", mt: 3 }}>
+                <RadioGroup
+                  value={selectedAnswers[currentQuestion] ?? ""}
+                  onChange={(e) => handleAnswerSelect(parseInt(e.target.value))}
+                >
+                  {questions[currentQuestion].options.map((option, index) => (
+                    <Box
+                      key={index}
+                      sx={{
+                        mb: 1,
+                        p: 2,
+                        borderRadius: 1,
+                        border: "1px solid",
+                        borderColor: "divider",
+                      }}
+                    >
+                      <FormControlLabel
+                        value={index}
+                        control={<Radio />}
+                        label={<Typography variant="body1">{option}</Typography>}
+                        sx={{ width: "100%" }}
+                      />
+                    </Box>
+                  ))}
+                </RadioGroup>
+              </FormControl>
+            </CardContent>
+          </Card>
+
+          {/* Navigation Buttons */}
+          <Box sx={{ display: "flex", justifyContent: "space-between", mt: 3 }}>
+            <Button
+              variant="outlined"
+              onClick={handlePrevious}
+              disabled={currentQuestion === 0}
             >
-              {questions[currentQuestion].options.map((option, index) => {
-                const isCorrect = isAnswerCorrect(currentQuestion, index);
-                const isSelected = isAnswerSelected(currentQuestion, index);
-                const showFeedback = submitted;
+              Anterior
+            </Button>
+
+            <Box sx={{ display: "flex", gap: 2 }}>
+              {currentQuestion < questions.length - 1 && (
+                <Button variant="outlined" onClick={handleNext}>
+                  Próxima
+                </Button>
+              )}
+
+              {currentQuestion === questions.length - 1 && (
+                <Button
+                  variant="contained"
+                  onClick={handleSubmit}
+                  disabled={!allQuestionsAnswered}
+                >
+                  Finalizar Quiz
+                </Button>
+              )}
+            </Box>
+          </Box>
+
+          {/* Question Navigator */}
+          <Box sx={{ mt: 3, p: 2, bgcolor: "action.hover", borderRadius: 1 }}>
+            <Typography variant="body2" fontWeight="medium" gutterBottom>
+              Navegação rápida:
+            </Typography>
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 1 }}>
+              {questions.map((_, index) => {
+                const isAnswered = selectedAnswers[index] !== null;
+                const isCurrent = index === currentQuestion;
 
                 return (
-                  <Box
+                  <Button
                     key={index}
-                    sx={{
-                      mb: 1,
-                      p: 2,
-                      borderRadius: 1,
-                      border: "1px solid",
-                      borderColor: showFeedback
-                        ? isCorrect
-                          ? "success.main"
-                          : isSelected
-                          ? "error.main"
-                          : "divider"
-                        : "divider",
-                      bgcolor: showFeedback
-                        ? isCorrect
-                          ? "success.lighter"
-                          : isSelected
-                          ? "error.lighter"
-                          : "transparent"
-                        : "transparent",
-                    }}
+                    variant={isCurrent ? "contained" : "outlined"}
+                    size="small"
+                    onClick={() => setCurrentQuestion(index)}
+                    sx={{ minWidth: 40 }}
                   >
-                    <FormControlLabel
-                      value={index}
-                      control={<Radio disabled={submitted} />}
-                      label={
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                          <Typography variant="body1">{option}</Typography>
-                          {showFeedback && isCorrect && (
-                            <CheckCircleIcon color="success" fontSize="small" />
-                          )}
-                          {showFeedback && isSelected && !isCorrect && (
-                            <CancelIcon color="error" fontSize="small" />
-                          )}
-                        </Box>
-                      }
-                      sx={{ width: "100%" }}
-                    />
-                  </Box>
+                    {index + 1}
+                    {isAnswered && " ✓"}
+                  </Button>
                 );
               })}
-            </RadioGroup>
-          </FormControl>
-
-          {/* Explanation */}
-          {submitted && questions[currentQuestion].explanation && (
-            <Alert severity="info" sx={{ mt: 3 }}>
-              <Typography variant="body2" fontWeight="bold" gutterBottom>
-                Explicação:
-              </Typography>
-              <Typography variant="body2">
-                {questions[currentQuestion].explanation}
-              </Typography>
-            </Alert>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Navigation Buttons */}
-      <Box sx={{ display: "flex", justifyContent: "space-between", mt: 3 }}>
-        <Button
-          variant="outlined"
-          onClick={handlePrevious}
-          disabled={currentQuestion === 0}
-        >
-          Anterior
-        </Button>
-
-        <Box sx={{ display: "flex", gap: 2 }}>
-          {currentQuestion < questions.length - 1 && (
-            <Button variant="outlined" onClick={handleNext}>
-              Próxima
-            </Button>
-          )}
-
-          {currentQuestion === questions.length - 1 && !submitted && (
-            <Button
-              variant="contained"
-              onClick={handleSubmit}
-              disabled={!allQuestionsAnswered}
-            >
-              Finalizar Quiz
-            </Button>
-          )}
-        </Box>
-      </Box>
-
-      {/* Question Navigator */}
-      <Box sx={{ mt: 3, p: 2, bgcolor: "action.hover", borderRadius: 1 }}>
-        <Typography variant="body2" fontWeight="medium" gutterBottom>
-          Navegação rápida:
-        </Typography>
-        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 1 }}>
-          {questions.map((_, index) => {
-            const isAnswered = selectedAnswers[index] !== null;
-            const isCurrent = index === currentQuestion;
-            const isCorrectAnswer = submitted && selectedAnswers[index] === questions[index].correctAnswer;
-            const isWrongAnswer = submitted && selectedAnswers[index] !== null && !isCorrectAnswer;
-
-            return (
-              <Button
-                key={index}
-                variant={isCurrent ? "contained" : "outlined"}
-                size="small"
-                onClick={() => setCurrentQuestion(index)}
-                sx={{
-                  minWidth: 40,
-                  bgcolor: submitted
-                    ? isCorrectAnswer
-                      ? "success.main"
-                      : isWrongAnswer
-                      ? "error.main"
-                      : undefined
-                    : undefined,
-                  color: submitted && (isCorrectAnswer || isWrongAnswer) ? "white" : undefined,
-                  "&:hover": {
-                    bgcolor: submitted
-                      ? isCorrectAnswer
-                        ? "success.dark"
-                        : isWrongAnswer
-                        ? "error.dark"
-                        : undefined
-                      : undefined,
-                  },
-                }}
-              >
-                {index + 1}
-                {isAnswered && !submitted && " ✓"}
-              </Button>
-            );
-          })}
-        </Box>
-      </Box>
+            </Box>
+          </Box>
+        </>
+      )}
     </Box>
   );
 }

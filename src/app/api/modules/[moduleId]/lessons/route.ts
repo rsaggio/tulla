@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import connectDB from "@/lib/db/mongodb";
 import Lesson from "@/models/Lesson";
 import Module from "@/models/Module";
+import Activity from "@/models/Activity";
 
 // GET /api/modules/[moduleId]/lessons - Listar aulas do módulo
 export async function GET(
@@ -56,11 +57,24 @@ export async function POST(
       );
     }
 
+    // Extrair dados de atividade antes de criar a aula
+    const { activity: activityData, ...lessonBody } = body;
+
     // Criar aula
     const lesson = await Lesson.create({
-      ...body,
+      ...lessonBody,
       moduleId,
     });
+
+    // Se for activity, criar documento de Activity
+    if (body.type === "activity" && activityData) {
+      await Activity.create({
+        lessonId: lesson._id,
+        title: lessonBody.title,
+        description: activityData.description || lessonBody.content || "",
+        instructions: activityData.instructions,
+      });
+    }
 
     // Adicionar aula ao módulo
     await Module.findByIdAndUpdate(moduleId, {

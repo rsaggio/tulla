@@ -1,8 +1,6 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import DashboardNav from "@/components/shared/DashboardNav";
-import Box from "@mui/material/Box";
-import Container from "@mui/material/Container";
+import DashboardLayoutClient from "@/components/shared/DashboardLayoutClient";
 
 export default async function DashboardLayout({
   children,
@@ -15,19 +13,5 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
-  return (
-    <Box sx={{ minHeight: "100vh", display: "flex" }}>
-      <DashboardNav user={session.user} />
-      <Box
-        component="main"
-        sx={{
-          flex: 1,
-          p: 4,
-          bgcolor: "grey.50",
-        }}
-      >
-        <Container maxWidth="xl">{children}</Container>
-      </Box>
-    </Box>
-  );
+  return <DashboardLayoutClient user={session.user}>{children}</DashboardLayoutClient>;
 }

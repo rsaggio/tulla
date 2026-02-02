@@ -16,6 +16,24 @@ import EditIcon from "@mui/icons-material/Edit";
 import AddIcon from "@mui/icons-material/Add";
 import MenuBookIcon from "@mui/icons-material/MenuBook";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 interface Lesson {
   _id: string;
@@ -45,6 +63,104 @@ interface Module {
   lessons: Lesson[];
 }
 
+function SortableLessonItem({
+  lesson,
+  index,
+  courseId,
+  moduleId,
+}: {
+  lesson: Lesson;
+  index: number;
+  courseId: string;
+  moduleId: string;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: lesson._id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <Box
+      ref={setNodeRef}
+      style={style}
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        gap: 2,
+        p: 2,
+        border: "1px solid",
+        borderColor: isDragging ? "primary.main" : "divider",
+        borderRadius: 1,
+        bgcolor: isDragging ? "action.hover" : "background.paper",
+        opacity: isDragging ? 0.8 : 1,
+        boxShadow: isDragging ? 4 : 0,
+        "&:hover": {
+          bgcolor: "action.hover",
+        },
+      }}
+    >
+      <Box
+        {...attributes}
+        {...listeners}
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          cursor: "grab",
+          color: "text.secondary",
+          "&:hover": { color: "text.primary" },
+          "&:active": { cursor: "grabbing" },
+        }}
+      >
+        <DragIndicatorIcon />
+      </Box>
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
+          <Typography variant="body1" fontWeight="medium">
+            {index + 1}. {lesson.title}
+          </Typography>
+          <Chip
+            label={
+              lesson.type === "teoria"
+                ? "Teoria"
+                : lesson.type === "video"
+                ? "Vídeo"
+                : lesson.type === "quiz"
+                ? "Quiz"
+                : lesson.type === "activity"
+                ? "Exercício Prático"
+                : "Leitura"
+            }
+            variant="outlined"
+            size="small"
+          />
+        </Box>
+        <Typography variant="caption" color="text.secondary">
+          {lesson.content
+            ? `${lesson.content.length} caracteres`
+            : "Sem conteúdo"}
+        </Typography>
+      </Box>
+      <Link
+        href={`/admin/conteudo/${courseId}/modulos/${moduleId}/aulas/${lesson._id}/editar`}
+        passHref
+      >
+        <Button variant="text" size="small" startIcon={<EditIcon />}>
+          Editar
+        </Button>
+      </Link>
+    </Box>
+  );
+}
+
 export default function ModuloDetalhesPage({
   params,
 }: {
@@ -54,6 +170,15 @@ export default function ModuloDetalhesPage({
   const [module, setModule] = useState<Module | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 5 },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   useEffect(() => {
     loadModule();
@@ -91,6 +216,44 @@ export default function ModuloDetalhesPage({
     }
   }
 
+  async function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id || !module) return;
+
+    const sortedLessons = [...module.lessons].sort((a, b) => a.order - b.order);
+    const oldIndex = sortedLessons.findIndex((l) => l._id === active.id);
+    const newIndex = sortedLessons.findIndex((l) => l._id === over.id);
+
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const reordered = arrayMove(sortedLessons, oldIndex, newIndex).map(
+      (lesson, i) => ({ ...lesson, order: i + 1 })
+    );
+
+    // Optimistic update
+    setModule({ ...module, lessons: reordered });
+
+    // Persist to server
+    try {
+      const res = await fetch(`/api/modules/${moduleId}/lessons/reorder`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          lessonIds: reordered.map((l) => l._id),
+        }),
+      });
+
+      if (!res.ok) {
+        // Revert on error
+        setModule({ ...module, lessons: sortedLessons });
+      }
+    } catch {
+      // Revert on error
+      setModule({ ...module, lessons: sortedLessons });
+    }
+  }
+
   if (loading) {
     return (
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 400 }}>
@@ -117,6 +280,8 @@ export default function ModuloDetalhesPage({
       </Box>
     );
   }
+
+  const sortedLessons = [...module.lessons].sort((a, b) => a.order - b.order);
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
@@ -185,7 +350,7 @@ export default function ModuloDetalhesPage({
                 Aulas do Módulo
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                Gerencie o conteúdo das aulas
+                Arraste para reordenar as aulas
               </Typography>
             </Box>
             <Link href={`/admin/conteudo/${courseId}/modulos/${moduleId}/aulas/nova`} passHref>
@@ -208,59 +373,28 @@ export default function ModuloDetalhesPage({
               </Link>
             </Box>
           ) : (
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              {module.lessons
-                .sort((a, b) => a.order - b.order)
-                .map((lesson) => (
-                  <Box
-                    key={lesson._id}
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 2,
-                      p: 2,
-                      border: "1px solid",
-                      borderColor: "divider",
-                      borderRadius: 1,
-                      "&:hover": {
-                        bgcolor: "action.hover",
-                      },
-                    }}
-                  >
-                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
-                        <Typography variant="body1" fontWeight="medium">
-                          {lesson.order}. {lesson.title}
-                        </Typography>
-                        <Chip
-                          label={
-                            lesson.type === "teoria"
-                              ? "Teoria"
-                              : lesson.type === "video"
-                              ? "Vídeo"
-                              : "Leitura"
-                          }
-                          variant="outlined"
-                          size="small"
-                        />
-                      </Box>
-                      <Typography variant="caption" color="text.secondary">
-                        {lesson.content
-                          ? `${lesson.content.length} caracteres`
-                          : "Sem conteúdo"}
-                      </Typography>
-                    </Box>
-                    <Link
-                      href={`/admin/conteudo/${courseId}/modulos/${moduleId}/aulas/${lesson._id}/editar`}
-                      passHref
-                    >
-                      <Button variant="text" size="small" startIcon={<EditIcon />}>
-                        Editar
-                      </Button>
-                    </Link>
-                  </Box>
-                ))}
-            </Box>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={sortedLessons.map((l) => l._id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                  {sortedLessons.map((lesson, index) => (
+                    <SortableLessonItem
+                      key={lesson._id}
+                      lesson={lesson}
+                      index={index}
+                      courseId={courseId}
+                      moduleId={moduleId}
+                    />
+                  ))}
+                </Box>
+              </SortableContext>
+            </DndContext>
           )}
         </CardContent>
       </Card>

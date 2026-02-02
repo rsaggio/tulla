@@ -2,8 +2,11 @@ import mongoose, { Document, Schema } from "mongoose";
 
 export interface ISubmission extends Document {
   _id: string;
-  projectId: mongoose.Types.ObjectId;
+  projectId?: mongoose.Types.ObjectId;
+  lessonId?: mongoose.Types.ObjectId;
   studentId: mongoose.Types.ObjectId;
+  cohortId?: mongoose.Types.ObjectId;
+  content?: string;
   submittedAt: Date;
   githubUrl?: string;
   fileUrl?: string;
@@ -21,12 +24,22 @@ const SubmissionSchema = new Schema<ISubmission>(
     projectId: {
       type: Schema.Types.ObjectId,
       ref: "Project",
-      required: [true, "ID do projeto é obrigatório"],
+    },
+    lessonId: {
+      type: Schema.Types.ObjectId,
+      ref: "Lesson",
+    },
+    content: {
+      type: String,
     },
     studentId: {
       type: Schema.Types.ObjectId,
       ref: "User",
       required: [true, "ID do aluno é obrigatório"],
+    },
+    cohortId: {
+      type: Schema.Types.ObjectId,
+      ref: "Cohort",
     },
     submittedAt: {
       type: Date,
@@ -73,5 +86,9 @@ const SubmissionSchema = new Schema<ISubmission>(
 // SubmissionSchema.index({ status: 1, submittedAt: 1 }); // Desabilitado para compatibilidade com Turbopack
 // SubmissionSchema.index({ studentId: 1, submittedAt: -1 }); // Desabilitado para compatibilidade com Turbopack
 
-export default mongoose.models.Submission ||
-  mongoose.model<ISubmission>("Submission", SubmissionSchema);
+// Forçar re-registro do modelo para garantir schema atualizado
+if (mongoose.models.Submission) {
+  delete mongoose.models.Submission;
+}
+
+export default mongoose.model<ISubmission>("Submission", SubmissionSchema);

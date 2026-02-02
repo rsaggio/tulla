@@ -3,7 +3,7 @@ import { auth } from "@/auth";
 import connectDB from "@/lib/db/mongodb";
 import Progress from "@/models/Progress";
 import Course from "@/models/Course";
-import "@/models/Lesson"; // Importar para registrar o schema para populate
+import Lesson from "@/models/Lesson";
 import "@/models/Project"; // Importar para registrar o schema para populate
 import "@/models/Module"; // Importar para registrar o schema para populate
 
@@ -43,6 +43,22 @@ export async function GET(request: NextRequest) {
         completedProjects: [],
         overallProgress: 0,
       });
+    } else {
+      // Recalcular progresso com base no total atual de aulas
+      const totalLessons = await Lesson.countDocuments({
+        moduleId: { $in: course.modules },
+      });
+
+      if (totalLessons > 0) {
+        const newProgress = Math.round(
+          (progress.completedLessons.length / totalLessons) * 100
+        );
+
+        if (newProgress !== progress.overallProgress) {
+          progress.overallProgress = newProgress;
+          await progress.save();
+        }
+      }
     }
 
     return NextResponse.json({ progress, course });

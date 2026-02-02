@@ -14,6 +14,7 @@ import {
   LogOut,
   GraduationCap,
   Bot,
+  School,
 } from "lucide-react";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
@@ -24,6 +25,9 @@ import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import Chip from "@mui/material/Chip";
 import Divider from "@mui/material/Divider";
+import Drawer from "@mui/material/Drawer";
+
+const DRAWER_WIDTH = 256;
 
 interface DashboardNavProps {
   user: {
@@ -31,9 +35,11 @@ interface DashboardNavProps {
     email?: string | null;
     role: "aluno" | "instrutor" | "admin";
   };
+  mobileOpen?: boolean;
+  onMobileClose?: () => void;
 }
 
-export default function DashboardNav({ user }: DashboardNavProps) {
+export default function DashboardNav({ user, mobileOpen = false, onMobileClose }: DashboardNavProps) {
   const pathname = usePathname();
 
   const alunoNav = [
@@ -53,6 +59,7 @@ export default function DashboardNav({ user }: DashboardNavProps) {
   const adminNav = [
     { href: "/admin", label: "Início", icon: GraduationCap },
     { href: "/admin/metricas", label: "Métricas", icon: BarChart3 },
+    { href: "/admin/turmas", label: "Turmas", icon: School },
     { href: "/admin/usuarios", label: "Usuários", icon: Users },
     { href: "/admin/conteudo", label: "Conteúdo", icon: BookOpen },
   ];
@@ -70,16 +77,12 @@ export default function DashboardNav({ user }: DashboardNavProps) {
     return "error";
   };
 
-  return (
+  const navContent = (
     <Box
       sx={{
-        width: 256,
-        bgcolor: "background.paper",
-        borderRight: 1,
-        borderColor: "divider",
         display: "flex",
         flexDirection: "column",
-        height: "100vh",
+        height: "100%",
       }}
     >
       <Box sx={{ p: 3, borderBottom: 1, borderColor: "divider" }}>
@@ -108,6 +111,7 @@ export default function DashboardNav({ user }: DashboardNavProps) {
                 component={Link}
                 href={item.href}
                 selected={isActive}
+                onClick={onMobileClose}
                 sx={{
                   borderRadius: 2,
                   "&.Mui-selected": {
@@ -125,7 +129,7 @@ export default function DashboardNav({ user }: DashboardNavProps) {
                 <ListItemIcon sx={{ minWidth: 40 }}>
                   <Icon size={20} />
                 </ListItemIcon>
-                <ListItemText 
+                <ListItemText
                   primary={item.label}
                   primaryTypographyProps={{
                     fontSize: "0.875rem",
@@ -153,5 +157,41 @@ export default function DashboardNav({ user }: DashboardNavProps) {
         </form>
       </Box>
     </Box>
+  );
+
+  return (
+    <>
+      {/* Mobile Drawer */}
+      <Drawer
+        variant="temporary"
+        open={mobileOpen}
+        onClose={onMobileClose}
+        ModalProps={{ keepMounted: true }}
+        sx={{
+          display: { xs: "block", md: "none" },
+          "& .MuiDrawer-paper": {
+            boxSizing: "border-box",
+            width: DRAWER_WIDTH,
+          },
+        }}
+      >
+        {navContent}
+      </Drawer>
+
+      {/* Desktop Sidebar */}
+      <Box
+        sx={{
+          display: { xs: "none", md: "flex" },
+          width: DRAWER_WIDTH,
+          flexShrink: 0,
+          bgcolor: "background.paper",
+          borderRight: 1,
+          borderColor: "divider",
+          height: "100vh",
+        }}
+      >
+        {navContent}
+      </Box>
+    </>
   );
 }

@@ -9,12 +9,14 @@ import ListItemButton from "@mui/material/ListItemButton";
 import ListItemText from "@mui/material/ListItemText";
 import IconButton from "@mui/material/IconButton";
 import Button from "@mui/material/Button";
-import Divider from "@mui/material/Divider";
+import Drawer from "@mui/material/Drawer";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import ChatBubbleOutlineIcon from "@mui/icons-material/ChatBubbleOutline";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
+
+const SIDEBAR_WIDTH = 280;
 
 interface Conversation {
   _id: string;
@@ -30,6 +32,8 @@ interface ConversationsSidebarProps {
   onSelectConversation: (id: string) => void;
   onNewConversation: () => void;
   onDeleteConversation: (id: string) => void;
+  mobileOpen?: boolean;
+  onMobileClose?: () => void;
 }
 
 export default function ConversationsSidebar({
@@ -38,6 +42,8 @@ export default function ConversationsSidebar({
   onSelectConversation,
   onNewConversation,
   onDeleteConversation,
+  mobileOpen = false,
+  onMobileClose,
 }: ConversationsSidebarProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -55,13 +61,20 @@ export default function ConversationsSidebar({
     }
   };
 
-  return (
+  const handleSelect = (id: string) => {
+    onSelectConversation(id);
+    onMobileClose?.();
+  };
+
+  const handleNew = () => {
+    onNewConversation();
+    onMobileClose?.();
+  };
+
+  const sidebarContent = (
     <Box
       sx={{
-        width: 280,
-        bgcolor: "background.paper",
-        borderRight: 1,
-        borderColor: "divider",
+        width: SIDEBAR_WIDTH,
         display: "flex",
         flexDirection: "column",
         height: "100%",
@@ -72,7 +85,7 @@ export default function ConversationsSidebar({
           fullWidth
           variant="contained"
           startIcon={<AddIcon />}
-          onClick={onNewConversation}
+          onClick={handleNew}
           sx={{ mb: 1 }}
         >
           Nova Conversa
@@ -89,7 +102,7 @@ export default function ConversationsSidebar({
             <Typography variant="body2" color="text.secondary">
               Nenhuma conversa ainda.
               <br />
-              Clique em "Nova Conversa" para começar!
+              Clique em &quot;Nova Conversa&quot; para começar!
             </Typography>
           </Box>
         ) : (
@@ -118,7 +131,7 @@ export default function ConversationsSidebar({
             >
               <ListItemButton
                 selected={currentConversationId === conv._id}
-                onClick={() => onSelectConversation(conv._id)}
+                onClick={() => handleSelect(conv._id)}
                 sx={{
                   borderRadius: 1,
                   "&.Mui-selected": {
@@ -179,5 +192,41 @@ export default function ConversationsSidebar({
         )}
       </List>
     </Box>
+  );
+
+  return (
+    <>
+      {/* Mobile Drawer */}
+      <Drawer
+        variant="temporary"
+        open={mobileOpen}
+        onClose={onMobileClose}
+        ModalProps={{ keepMounted: true }}
+        sx={{
+          display: { xs: "block", md: "none" },
+          "& .MuiDrawer-paper": {
+            boxSizing: "border-box",
+            width: SIDEBAR_WIDTH,
+          },
+        }}
+      >
+        {sidebarContent}
+      </Drawer>
+
+      {/* Desktop Sidebar */}
+      <Box
+        sx={{
+          display: { xs: "none", md: "flex" },
+          width: SIDEBAR_WIDTH,
+          flexShrink: 0,
+          bgcolor: "background.paper",
+          borderRight: 1,
+          borderColor: "divider",
+          height: "100%",
+        }}
+      >
+        {sidebarContent}
+      </Box>
+    </>
   );
 }

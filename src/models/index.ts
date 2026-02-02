@@ -13,3 +13,6 @@ export type { ILesson } from "./Lesson";
 export type { IProject } from "./Project";
 export type { ISubmission } from "./Submission";
 export type { IProgress } from "./Progress";
+export { default as Cohort } from "./Cohort";
+
+export type { ICohort } from "./Cohort";

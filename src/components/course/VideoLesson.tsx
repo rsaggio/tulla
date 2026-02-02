@@ -4,6 +4,7 @@ import React from "react";
 import { Box, Typography, Paper, Chip } from "@mui/material";
 import { PlayCircle } from "@mui/icons-material";
 import ReactMarkdown from "react-markdown";
+import VimeoPlayer from "@/components/VimeoPlayer";
 
 interface VideoLessonProps {
   title: string;
@@ -20,15 +21,17 @@ export default function VideoLesson({
   duration,
   resources,
 }: VideoLessonProps) {
-  // Extrair o ID do vídeo do YouTube se for um link do YouTube
-  const getYouTubeEmbedUrl = (url: string) => {
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-    const match = url.match(regExp);
-    const videoId = match && match[2].length === 11 ? match[2] : null;
-    return videoId ? "https://www.youtube.com/embed/" + videoId : url;
-  };
+  const isVimeo = /vimeo\.com/.test(videoUrl);
+  const isYouTube = /youtu\.?be/.test(videoUrl);
 
-  const embedUrl = getYouTubeEmbedUrl(videoUrl);
+  const getYouTubeEmbedUrl = (url: string) => {
+    const ytRegExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const ytMatch = url.match(ytRegExp);
+    if (ytMatch && ytMatch[2].length === 11) {
+      return `https://www.youtube.com/embed/${ytMatch[2]}`;
+    }
+    return url;
+  };
 
   return (
     <Box>
@@ -53,31 +56,37 @@ export default function VideoLesson({
       </Box>
 
       {/* Video Player */}
-      <Paper
-        elevation={3}
-        sx={{
-          position: "relative",
-          paddingTop: "56.25%", // 16:9 aspect ratio
-          mb: 4,
-          overflow: "hidden",
-          borderRadius: 2,
-        }}
-      >
-        <iframe
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
-            border: 0,
+      {isVimeo ? (
+        <Box sx={{ mb: 4 }}>
+          <VimeoPlayer videoUrl={videoUrl} title={title} />
+        </Box>
+      ) : (
+        <Paper
+          elevation={3}
+          sx={{
+            position: "relative",
+            paddingTop: "56.25%",
+            mb: 4,
+            overflow: "hidden",
+            borderRadius: 2,
           }}
-          src={embedUrl}
-          title={title}
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-        />
-      </Paper>
+        >
+          <iframe
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+              border: 0,
+            }}
+            src={isYouTube ? getYouTubeEmbedUrl(videoUrl) : videoUrl}
+            title={title}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
+        </Paper>
+      )}
 
       {/* Content */}
       {content && (

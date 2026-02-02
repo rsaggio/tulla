@@ -17,6 +17,10 @@ import CircleOutlinedIcon from "@mui/icons-material/CircleOutlined";
 import FolderIcon from "@mui/icons-material/Folder";
 import BookOpenIcon from "@mui/icons-material/MenuBook";
 import LockIcon from "@mui/icons-material/Lock";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import ExpandLessIcon from "@mui/icons-material/ExpandLess";
+import Collapse from "@mui/material/Collapse";
+import IconButton from "@mui/material/IconButton";
 
 interface Module {
   _id: string;
@@ -45,6 +49,7 @@ export default function AlunoCursoPage() {
   const [course, setCourse] = useState<Course | null>(null);
   const [completedLessons, setCompletedLessons] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [openModules, setOpenModules] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     loadCourse();
@@ -152,7 +157,10 @@ export default function AlunoCursoPage() {
             return (
               <Card key={module._id}>
                 <CardContent>
-                  <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", mb: 2 }}>
+                  <Box
+                    onClick={() => setOpenModules((prev) => ({ ...prev, [module._id]: !prev[module._id] }))}
+                    sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", cursor: "pointer", userSelect: "none" }}
+                  >
                     <Box>
                       <Typography variant="h5" fontWeight="bold">
                         Módulo {module.order}: {module.title}
@@ -160,17 +168,20 @@ export default function AlunoCursoPage() {
                       <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
                         {module.description}
                       </Typography>
-                    </Box>
-                    <Chip label={module.estimatedHours + "h"} size="small" />
-                  </Box>
-
-                  <Stack spacing={1}>
-                    <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
-                      <Typography variant="body2" color="text.secondary">Progresso do Módulo</Typography>
-                      <Typography variant="body2" fontWeight={500}>
+                      <Typography variant="body2" fontWeight={500} sx={{ mt: 0.5 }}>
                         {completedInModule} / {moduleLessons.length} aulas
                       </Typography>
                     </Box>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <Chip label={module.estimatedHours + "h"} size="small" />
+                      <IconButton size="small">
+                        {openModules[module._id] === false ? <ExpandMoreIcon /> : <ExpandLessIcon />}
+                      </IconButton>
+                    </Box>
+                  </Box>
+
+                  <Collapse in={openModules[module._id] !== false}>
+                  <Stack spacing={1} sx={{ mt: 2 }}>
 
                     {moduleLessons.sort((a, b) => a.order - b.order).map((lesson) => {
                       const isCompleted = completedLessons.includes(lesson._id);
@@ -276,6 +287,7 @@ export default function AlunoCursoPage() {
                       </Paper>
                     )}
                   </Stack>
+                  </Collapse>
                 </CardContent>
               </Card>
             );

@@ -10,12 +10,18 @@ import {
   Button,
   Alert,
   Divider,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  CircularProgress,
 } from "@mui/material";
 import {
   Assignment,
   Info,
   Send,
   CheckCircle,
+  Cancel,
 } from "@mui/icons-material";
 import ReactMarkdown from "react-markdown";
 
@@ -38,9 +44,15 @@ interface Submission {
   grade?: number;
 }
 
+interface EvaluationResult {
+  grade: number;
+  feedback: string;
+  status: string;
+}
+
 interface ActivityLessonProps {
   activity: Activity;
-  onSubmit: (content: string) => Promise<void>;
+  onSubmit: (content: string) => Promise<EvaluationResult>;
   previousSubmission?: Submission;
 }
 
@@ -50,7 +62,9 @@ export default function ActivityLesson({
   previousSubmission,
 }: ActivityLessonProps) {
   const [content, setContent] = useState(
-    previousSubmission?.content || ""
+    previousSubmission?.status === "reprovado"
+      ? previousSubmission?.content || ""
+      : previousSubmission?.content || ""
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [wordCount, setWordCount] = useState(
@@ -58,6 +72,8 @@ export default function ActivityLesson({
       ? previousSubmission.content.trim().split(/\s+/).length
       : 0
   );
+  const [evaluation, setEvaluation] = useState<EvaluationResult | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
 
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newContent = e.target.value;
@@ -67,18 +83,6 @@ export default function ActivityLesson({
   };
 
   const handleSubmit = async () => {
-    // Validar palavras mínimas
-    if (activity.minWords && wordCount < activity.minWords) {
-      alert("A atividade deve ter pelo menos " + activity.minWords + " palavras.");
-      return;
-    }
-
-    // Validar palavras máximas
-    if (activity.maxWords && wordCount > activity.maxWords) {
-      alert("A atividade deve ter no máximo " + activity.maxWords + " palavras.");
-      return;
-    }
-
     if (!content.trim()) {
       alert("Por favor, escreva sua resposta antes de enviar.");
       return;
@@ -86,20 +90,15 @@ export default function ActivityLesson({
 
     setIsSubmitting(true);
     try {
-      await onSubmit(content);
-      alert("Atividade enviada com sucesso!");
+      const result = await onSubmit(content);
+      setEvaluation(result);
+      setModalOpen(true);
     } catch (error) {
       console.error("Erro ao enviar atividade:", error);
       alert("Erro ao enviar atividade. Tente novamente.");
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const getWordCountColor = () => {
-    if (activity.minWords && wordCount < activity.minWords) return "error";
-    if (activity.maxWords && wordCount > activity.maxWords) return "error";
-    return "success";
   };
 
   const getStatusInfo = (status: string) => {
@@ -114,6 +113,10 @@ export default function ActivityLesson({
         return { severity: "warning" as const, text: "Aguardando Revisão" };
     }
   };
+
+  const isDisabled =
+    isSubmitting ||
+    previousSubmission?.status === "aprovado";
 
   return (
     <Box>
@@ -148,7 +151,7 @@ export default function ActivityLesson({
           </Typography>
           {previousSubmission.grade !== undefined && (
             <Typography variant="body2">
-              Nota: {previousSubmission.grade}
+              Nota: {(previousSubmission.grade / 10).toFixed(1)}/10
             </Typography>
           )}
           {previousSubmission.feedback && (
@@ -195,25 +198,13 @@ export default function ActivityLesson({
           <ReactMarkdown>{activity.instructions}</ReactMarkdown>
         </Box>
 
-        {(activity.minWords || activity.maxWords || activity.expectedFormat) && (
+        {activity.expectedFormat && (
           <>
             <Divider sx={{ my: 2 }} />
             <Box>
-              {activity.minWords && (
-                <Typography variant="body2" color="text.secondary">
-                  • Mínimo de palavras: {activity.minWords}
-                </Typography>
-              )}
-              {activity.maxWords && (
-                <Typography variant="body2" color="text.secondary">
-                  • Máximo de palavras: {activity.maxWords}
-                </Typography>
-              )}
-              {activity.expectedFormat && (
-                <Typography variant="body2" color="text.secondary">
-                  • Formato esperado: {activity.expectedFormat}
-                </Typography>
-              )}
+              <Typography variant="body2" color="text.secondary">
+                Formato esperado: {activity.expectedFormat}
+              </Typography>
             </Box>
           </>
         )}
@@ -255,42 +246,104 @@ export default function ActivityLesson({
           value={content}
           onChange={handleContentChange}
           placeholder="Digite sua resposta aqui..."
-          disabled={
-            isSubmitting ||
-            (previousSubmission?.status === "aprovado" ||
-              previousSubmission?.status === "em_revisao")
-          }
+          disabled={isDisabled}
           sx={{ mb: 2 }}
         />
 
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <Typography
-            variant="body2"
-            color={getWordCountColor() + ".main"}
-          >
+          <Typography variant="body2" color="text.secondary">
             Palavras: {wordCount}
-            {activity.minWords && " / " + activity.minWords + " mínimo"}
-            {activity.maxWords && " (máx: " + activity.maxWords + ")"}
           </Typography>
 
           <Button
             variant="contained"
             size="large"
-            startIcon={<Send />}
+            startIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : <Send />}
             onClick={handleSubmit}
-            disabled={
-              isSubmitting ||
-              !content.trim() ||
-              (activity.minWords && wordCount < activity.minWords) ||
-              (activity.maxWords && wordCount > activity.maxWords) ||
-              previousSubmission?.status === "em_revisao" ||
-              previousSubmission?.status === "aprovado"
-            }
+            disabled={isDisabled || !content.trim()}
           >
-            {isSubmitting ? "Enviando..." : "Enviar Atividade"}
+            {isSubmitting ? "Avaliando sua resposta..." : "Enviar Atividade"}
           </Button>
         </Box>
       </Paper>
+
+      {/* Evaluation Modal */}
+      <Dialog
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        {evaluation && (
+          <>
+            <DialogTitle sx={{ textAlign: "center", pt: 4 }}>
+              <Box sx={{ mb: 2 }}>
+                {evaluation.status === "aprovado" ? (
+                  <CheckCircle sx={{ fontSize: 64, color: "success.main" }} />
+                ) : (
+                  <Cancel sx={{ fontSize: 64, color: "error.main" }} />
+                )}
+              </Box>
+              <Typography variant="h5" fontWeight="bold">
+                {evaluation.status === "aprovado"
+                  ? "Parabéns! Atividade Aprovada!"
+                  : "Tente Novamente"}
+              </Typography>
+            </DialogTitle>
+            <DialogContent>
+              <Box sx={{ textAlign: "center", mb: 3 }}>
+                <Typography
+                  variant="h2"
+                  fontWeight="bold"
+                  sx={{
+                    color:
+                      evaluation.grade > 7
+                        ? "success.main"
+                        : evaluation.grade >= 5
+                        ? "warning.main"
+                        : "error.main",
+                  }}
+                >
+                  {evaluation.grade.toFixed(1)}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  de 10.0
+                </Typography>
+              </Box>
+
+              <Paper
+                sx={{
+                  p: 2,
+                  bgcolor: "action.hover",
+                  borderRadius: 2,
+                }}
+              >
+                <Typography variant="subtitle2" fontWeight="bold" gutterBottom>
+                  Feedback do avaliador:
+                </Typography>
+                <Typography variant="body2" sx={{ whiteSpace: "pre-line" }}>
+                  {evaluation.feedback}
+                </Typography>
+              </Paper>
+
+              {evaluation.status !== "aprovado" && (
+                <Alert severity="info" sx={{ mt: 2 }}>
+                  Você precisa de uma nota maior que 7.0 para ser aprovado. Revise sua resposta e tente novamente!
+                </Alert>
+              )}
+            </DialogContent>
+            <DialogActions sx={{ justifyContent: "center", pb: 3 }}>
+              <Button
+                variant="contained"
+                onClick={() => setModalOpen(false)}
+                size="large"
+              >
+                {evaluation.status === "aprovado" ? "Fechar" : "Tentar Novamente"}
+              </Button>
+            </DialogActions>
+          </>
+        )}
+      </Dialog>
     </Box>
   );
 }
