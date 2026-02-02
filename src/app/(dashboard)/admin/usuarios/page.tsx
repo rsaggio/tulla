@@ -34,6 +34,15 @@ interface User {
   createdAt: string;
 }
 
+interface Cohort {
+  _id: string;
+  name: string;
+  code: string;
+  status: string;
+  students: any[];
+  maxStudents?: number;
+}
+
 export default function UsuariosPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
@@ -41,6 +50,8 @@ export default function UsuariosPage() {
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [cohorts, setCohorts] = useState<Cohort[]>([]);
+  const [selectedCohortId, setSelectedCohortId] = useState("");
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -51,6 +62,7 @@ export default function UsuariosPage() {
 
   useEffect(() => {
     loadUsers();
+    loadCohorts();
   }, []);
 
   useEffect(() => {
@@ -81,6 +93,18 @@ export default function UsuariosPage() {
     }
   }
 
+  async function loadCohorts() {
+    try {
+      const res = await fetch("/api/cohorts");
+      if (res.ok) {
+        const data = await res.json();
+        setCohorts(data.filter((c: Cohort) => c.status === "active" || c.status === "scheduled"));
+      }
+    } catch (error) {
+      console.error("Erro ao carregar turmas:", error);
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
@@ -89,16 +113,21 @@ export default function UsuariosPage() {
       const url = editingUser ? `/api/users/${editingUser._id}` : "/api/users";
       const method = editingUser ? "PUT" : "POST";
 
+      const payload = editingUser
+        ? formData
+        : { ...formData, cohortId: selectedCohortId || undefined };
+
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
 
       if (res.ok) {
         setShowCreateForm(false);
         setEditingUser(null);
         setFormData({ name: "", email: "", password: "", role: "aluno" });
+        setSelectedCohortId("");
         loadUsers();
         alert(
           editingUser
@@ -167,6 +196,7 @@ export default function UsuariosPage() {
     setShowCreateForm(false);
     setEditingUser(null);
     setFormData({ name: "", email: "", password: "", role: "aluno" });
+    setSelectedCohortId("");
   }
 
   if (loading) {
@@ -321,6 +351,28 @@ export default function UsuariosPage() {
                     <MenuItem value="admin">Admin</MenuItem>
                   </TextField>
                 </Grid>
+
+                {formData.role === "aluno" && !editingUser && cohorts.length > 0 && (
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      select
+                      label="Matricular na turma (opcional)"
+                      value={selectedCohortId}
+                      onChange={(e) => setSelectedCohortId(e.target.value)}
+                    >
+                      <MenuItem value="">Nenhuma turma</MenuItem>
+                      {cohorts.map((cohort) => (
+                        <MenuItem key={cohort._id} value={cohort._id}>
+                          {cohort.name} ({cohort.code})
+                          {cohort.maxStudents
+                            ? ` - ${cohort.students.length}/${cohort.maxStudents} alunos`
+                            : ` - ${cohort.students.length} alunos`}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                  </Grid>
+                )}
 
                 <Grid item xs={12}>
                   <Box sx={{ display: "flex", gap: 2 }}>

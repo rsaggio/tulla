@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import connectDB from "@/lib/db/mongodb";
 import User from "@/models/User";
+import Cohort from "@/models/Cohort";
 import bcrypt from "bcryptjs";
 import { sendWelcomeEmail } from "@/lib/email";
 
@@ -49,7 +50,7 @@ export async function POST(request: NextRequest) {
     await connectDB();
 
     const body = await request.json();
-    const { name, email, password, role } = body;
+    const { name, email, password, role, cohortId } = body;
 
     // Verificar se email já existe
     const existingUser = await User.findOne({ email });
@@ -69,6 +70,23 @@ export async function POST(request: NextRequest) {
       password: hashedPassword,
       role: role || "aluno",
     });
+
+    // Matricular na turma se cohortId foi informado
+    if (cohortId && (role === "aluno" || !role)) {
+      try {
+        const cohort = await Cohort.findById(cohortId);
+        if (cohort) {
+          cohort.students.push(user._id);
+          await cohort.save();
+
+          user.enrolledCohorts = [cohortId];
+          user.enrolledCourses = [cohort.courseId];
+          await user.save();
+        }
+      } catch (cohortError) {
+        console.error("Erro ao matricular aluno na turma:", cohortError);
+      }
+    }
 
     // Enviar email de boas-vindas
     try {
