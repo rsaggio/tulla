@@ -75,7 +75,7 @@ export default function NovaAulaGravadaPage() {
       const instructorsRes = await fetch("/api/users?role=instrutor");
       if (instructorsRes.ok) {
         const instructorsData = await instructorsRes.json();
-        setInstructors(instructorsData.users || []);
+        setInstructors(Array.isArray(instructorsData) ? instructorsData : []);
       }
     } catch (error) {
       console.error("Erro ao carregar dados:", error);

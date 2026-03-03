@@ -7,7 +7,7 @@ import bcrypt from "bcryptjs";
 import { sendWelcomeEmail } from "@/lib/email";
 
 // GET - Listar todos os usuários (apenas admin)
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     const session = await auth();
 
@@ -20,7 +20,15 @@ export async function GET() {
 
     await connectDB();
 
-    const users = await User.find()
+    const { searchParams } = new URL(request.url);
+    const role = searchParams.get("role");
+
+    const filter: Record<string, string> = {};
+    if (role) {
+      filter.role = role;
+    }
+
+    const users = await User.find(filter)
       .select("-password")
       .sort({ createdAt: -1 })
       .lean();
