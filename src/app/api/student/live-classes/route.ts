@@ -22,6 +22,9 @@ export async function GET(request: NextRequest) {
 
     await connectDB();
 
+    // Garantir que os models referenciados estejam registrados para o populate
+    void Cohort;
+
     // Buscar o usuário e suas turmas
     const user = await User.findById(session.user.id).select("enrolledCohorts");
 

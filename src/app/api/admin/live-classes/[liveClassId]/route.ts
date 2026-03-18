@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import connectDB from "@/lib/db/mongodb";
 import LiveClass from "@/models/LiveClass";
+import User from "@/models/User";
+import Cohort from "@/models/Cohort";
 
 // GET /api/admin/live-classes/[liveClassId] - Obter detalhes de uma aula gravada
 export async function GET(
@@ -16,6 +18,10 @@ export async function GET(
     }
 
     await connectDB();
+
+    // Garantir que os models referenciados estejam registrados para o populate
+    void User;
+    void Cohort;
 
     const { liveClassId } = await params;
 
